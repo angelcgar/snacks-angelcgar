@@ -29,16 +29,15 @@ jq '.scripts += {
 }' package.json > temp.json && mv temp.json package.json
 
 if [ ! -d ".git" ]; then
-    echo "Inicializando repositorio Git..."
+  echo "Inicializando repositorio Git..."
 
-    git init
+  git init
 fi
 
 if [ ! -f ".gitignore" ]; then
-    touch .gitignore
+  touch .gitignore
 
-    echo "/node_modules" >> .gitignore
-    echo "/dist" >> .gitignore
+  cat .gitignore.temp >> .gitignore
 fi
 
 echo "Repositorio Git ya está inicializado."
