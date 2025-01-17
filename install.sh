@@ -1,5 +1,9 @@
-if [ -e "~/.local/bin/ts-init-node" ]; then
-  rm ~/.local/bin/ts-init-node
+nombre_programa="ts-init-node"
+
+if [ -e "~/.local/bin/$nombre_programa" ]; then
+  rm ~/.local/bin/$nombre_programa
 fi
 
-cp ts-init-node.sh ~/.local/bin/ts-init-node
+cp $nombre_programa.sh ~/.local/bin/$nombre_programa
+
+echo "$nombre_programa instalado correctamente"
