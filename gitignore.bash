@@ -1,4 +1,4 @@
-### Node.js ###
+GITIGNORE="### Node.js ###
 node_modules/
 npm-debug.log*
 yarn-debug.log*
@@ -50,3 +50,4 @@ docker-compose.override.yml
 .cache/
 .nyc_output/
 *.swp
+"

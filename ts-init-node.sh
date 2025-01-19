@@ -12,6 +12,8 @@ pnpm i -D typescript @types/node ts-node-dev rimraf
 
 npx tsc --init --outDir dist/ --rootDir src
 
+source gitignore.bash
+
 # todo: testear este bloque de codigo
 # Verificar si jq está instalado
 if ! command -v jq &> /dev/null; then
@@ -37,7 +39,7 @@ fi
 if [ ! -f ".gitignore" ]; then
   touch .gitignore
 
-  cat .gitignore.temp >> .gitignore
+  echo "$GITIGNORE" >> .gitignore
 fi
 
 echo "Repositorio Git ya está inicializado."
