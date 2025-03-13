@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Lista de paquetes que NO se deben actualizar
+# Lista de paquetes que NO se deben actualizar (IDEs, navegadores, herramientas pesadas, etc.)
 EXCLUDE_PKGS=(
     brave-bin
     firefox
@@ -11,7 +11,6 @@ EXCLUDE_PKGS=(
     docker
     docker-compose
     gcc
-    gcc-libs
     git
     github-cli
     go
@@ -27,40 +26,16 @@ EXCLUDE_PKGS=(
     vlc
     warp-terminal 
     wine
-    linux
-    linux-headers 
     cloudflared
-    cmake
     containerd
-    archlinux-tweak-tool-git
-    arcolinux-sddm-simplicity-git
-    arcolinux-system-config-git 
-    audacity
-    ffmpeg
-    gettext
-    glib2 
-    glib2-devel
-    grub
-    libmupdf
-    man-pages
-    networkmanager
-    noto-fonts
-    nss        
-    nwg-look    
-    oh-my-zsh-git
-    opencv
-    papirus-icon-theme
     snapd
-    linux-firmware
-    linux-firmware-marvell
-    linux-firmware-whence
 )
 
-# Convertir la lista de exclusiones en un formato que pacman entienda
+# Generar la cadena de exclusión para pacman
 EXCLUDE_STRING=$(printf " --ignore %s" "${EXCLUDE_PKGS[@]}")
 
-# Actualizar el sistema, excluyendo los paquetes especificados
-echo "Actualizando el sistema, excluyendo paquetes específicos..."
+# Ejecutar actualización con exclusión de paquetes pesados
+echo "Actualizando el sistema, excluyendo paquetes no esenciales..."
 sudo pacman -Syu $EXCLUDE_STRING #--noconfirm
 
-echo "¡Proceso completado!"
+echo "¡Actualización completada!"
