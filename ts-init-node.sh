@@ -22,10 +22,10 @@ if ! command -v pnpm &>/dev/null; then
 fi
 
 # Verificar si git está configurado
-if [ -z "$GIT_NAME" ] || [ -z "$GIT_EMAIL" ]; then
-  echo "❌ Error: Git user.name or user.email are not configured"
-  exit 1
-fi
+# if [ -z "$GIT_NAME" ] || [ -z "$GIT_EMAIL" ]; then
+#   echo "❌ Error: Git user.name or user.email are not configured"
+#   exit 1
+# fi
 
 # Verificar si ya existe un package.json
 if [ -f "package.json" ]; then
@@ -65,7 +65,7 @@ jq '.scripts += {
 
 # Inicializar repositorio Git
 if [ ! -d ".git" ]; then
-  echo "Inicializando repositorio Git..."
+  echo -e "${GREEN}Inicializando repositorio Git..."
 
   git init
 fi
@@ -117,7 +117,7 @@ echo -e "${GREEN}✅ Creating project structure${NC}"
 mkdir src/
 touch src/app.ts
 
-cat >src/index.ts <<EOF
+cat >src/app.ts <<EOF
 import 'dotenv/config';
 
 console.log('Hello Node');
@@ -132,6 +132,6 @@ echo "NODE_ENV=development" >.env
 echo -e "${GREEN}✅ Installing dotenv${NC}"
 pnpm install dotenv env-var
 
-echo "${BLUE}🎉 Project setup completed successfully!${NC}"
-echo "${BLUE}📝 You can start developing with:${NC}"
-echo "${GREEN}   pnpm run dev${NC}"
+echo -e "${BLUE}🎉 Project setup completed successfully!${NC}"
+echo -e "${BLUE}📝 You can start developing with:${NC}"
+echo -e "${GREEN}   pnpm run dev${NC}"
