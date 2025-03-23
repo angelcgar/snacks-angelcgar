@@ -1,3 +1,5 @@
+#!/bin/bash
+
 if [ "$1" == "new" ]; then
   echo "Creando nuevo proyecto..."
 
@@ -10,6 +12,7 @@ if [ "$1" == "new" ]; then
     git init
     touch README.md
     echo "# " >>README.md
+    cp ~/Documentos/plantillas/youtube/templete.md .
     git add .
     git commit -m "Initial commit"
     echo "Proyecto creado con éxito"
