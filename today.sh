@@ -1,39 +1,118 @@
 #!/bin/bash
 
-# Obtener la fecha actual en formato YYYY-MM-DD
+# Configuración
+TEMPLATE_DIR="$HOME/.config/today-templates"
+DEFAULT_TEMPLATE="diario.md"
+
+# Crear directorio de templates si no existe
+mkdir -p "$TEMPLATE_DIR"
+
+# Obtener fechas
 fecha=$(date +"%d-%m-%Y")
+anio=$(date +"%y")
+mes=$(date +"%m")
+dia=$(date +"%d")
 
-# Obtener la ruta desde donde se ejecuta el script
-ruta=$(pwd)
+# Mapeo de meses
+declare -A meses=(
+  ["01"]="enero" ["02"]="febrero" ["03"]="marzo" ["04"]="abril"
+  ["05"]="mayo" ["06"]="junio" ["07"]="julio" ["08"]="agosto"
+  ["09"]="septiembre" ["10"]="octubre" ["11"]="noviembre" ["12"]="diciembre"
+)
 
-if [ "$1" == "directorio" ]; then
-  anio=$(date +"%y")
-  mes=$(date +"%m")
-  case $mes in
-  "01") mesName="enero" ;;
-  "02") mesName="febrero" ;;
-  "03") mesName="marzo" ;;
-  "04") mesName="abril" ;;
-  "05") mesName="mayo" ;;
-  "06") mesName="junio" ;;
-  "07") mesName="julio" ;;
-  "08") mesName="agosto" ;;
-  "09") mesName="septiembre" ;;
-  "10") mesName="octubre" ;;
-  "11") mesName="noviembre" ;;
-  "12") mesName="diciembre" ;;
-  esac
+# Función para crear directorio del mes
+crear_directorio() {
+  local nombre_directorio="$anio-$mes-${meses[$mes]}"
+  mkdir -p "$nombre_directorio"
+  echo "Directorio '$nombre_directorio' creado con éxito en $(pwd)"
+}
 
-  mkdir "$anio-$mes-$mesName"
-  echo "Directorio '$anio-$mes-$mesName' creado con éxito en $ruta"
-  exit 1
-fi
+# Función para crear template por defecto si no existe
+crear_template_por_defecto() {
+  if [ ! -f "$TEMPLATE_DIR/$DEFAULT_TEMPLATE" ]; then
+    cat >"$TEMPLATE_DIR/$DEFAULT_TEMPLATE" <<EOF
+# Diario del día $dia de ${meses[$mes]} de 20$anio
 
-# Crear un archivo con la fecha como nombre
-touch "$fecha.md"
+## Hoy agradezco por:
+1. 
+2. 
+3. 
 
-# Confirmar la creación del archivo y mostrar la ruta
-echo "Archivo '$fecha.md' creado con éxito en $ruta"
+## Hoy he vivido:
+- 
 
-# Mostrar un pequeño mensaje motivacional o un dato curioso
-echo "¡Hoy es un excelente día para seguir creciendo!"
+## Lo más destacado del día:
+- 
+
+## Buenas suerte en tu día!
+EOF
+  fi
+}
+
+# Función principal para crear el archivo del día
+crear_diario() {
+  local template="$1"
+  local nombre_directorio="$anio-$mes-${meses[$mes]}"
+  local archivo_diario
+
+  # Determinar si crear en subdirectorio o directorio actual
+  if [ -d "$nombre_directorio" ]; then
+    archivo_diario="$nombre_directorio/$fecha.md"
+  else
+    archivo_diario="$fecha.md"
+  fi
+
+  # Crear archivo
+  if [ -n "$template" ]; then
+    if [ -f "$TEMPLATE_DIR/$template.md" ]; then
+      cp "$TEMPLATE_DIR/$template.md" "$archivo_diario"
+      sed -i "s/{{fecha}}/$dia de ${meses[$mes]} de 20$anio/g" "$archivo_diario"
+      echo "Archivo '$archivo_diario' creado con template '$template'"
+    else
+      echo "Template '$template' no encontrado. Usando template por defecto."
+      crear_template_por_defecto
+      cp "$TEMPLATE_DIR/$DEFAULT_TEMPLATE" "$archivo_diario"
+    fi
+  else
+    touch "$archivo_diario"
+    echo "Archivo '$archivo_diario' creado (vacío)"
+  fi
+
+  # Abrir el archivo en el editor predeterminado (opcional)
+  if [ -n "$EDITOR" ]; then
+    $EDITOR "$archivo_diario"
+  else
+    xdg-open "$archivo_diario" 2>/dev/null || echo "Abre manualmente: $archivo_diario"
+  fi
+}
+
+# Manejo de argumentos
+case "$1" in
+"directorio")
+  crear_directorio
+  ;;
+"template")
+  crear_template_por_defecto
+  echo "Template por defecto creado en: $TEMPLATE_DIR/$DEFAULT_TEMPLATE"
+  ;;
+"add-template")
+  if [ -z "$2" ]; then
+    echo "Uso: $0 add-template <nombre-template>"
+    exit 1
+  fi
+  $EDITOR "$TEMPLATE_DIR/$2.md" || vi "$TEMPLATE_DIR/$2.md"
+  ;;
+*)
+  crear_diario "$1"
+  ;;
+esac
+
+# Mensaje motivacional
+frases=(
+  "¡Hoy es un excelente día para seguir creciendo!"
+  "Cada día es una nueva oportunidad para brillar."
+  "Escribe tu día como quieres recordarlo."
+  "Pequeños pasos cada día llevan a grandes logros."
+  "Tu diario es el espejo de tu crecimiento personal."
+)
+echo "${frases[$RANDOM % ${#frases[@]}]}"
