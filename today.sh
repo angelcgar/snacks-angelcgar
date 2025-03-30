@@ -55,18 +55,41 @@ crear_diario() {
   local nombre_directorio="$anio-$mes-${meses[$mes]}"
   local archivo_diario
 
-  # Determinar si crear en subdirectorio o directorio actual
+  # Determinar ubicación del archivo
   if [ -d "$nombre_directorio" ]; then
     archivo_diario="$nombre_directorio/$fecha.md"
   else
     archivo_diario="$fecha.md"
   fi
 
-  # Crear archivo
+  # Variables disponibles
+  local semana=$(date +"%V")
+  local dia_semana=$(date +"%A")
+  local hora_actual=$(date +"%H:%M")
+  local mes_actual=${meses[$mes]}
+  local anio_completo="20$anio"
+
+  # Crear archivo con template
   if [ -n "$template" ]; then
     if [ -f "$TEMPLATE_DIR/$template.md" ]; then
+      # Copiar template y procesar variables
       cp "$TEMPLATE_DIR/$template.md" "$archivo_diario"
-      sed -i "s/{{fecha}}/$dia de ${meses[$mes]} de 20$anio/g" "$archivo_diario"
+
+      # Sustituir variables básicas
+      sed -i "
+                s/{{fecha}}/$dia de $mes_actual de $anio_completo/g;
+                s/{{dia}}/$dia/g;
+                s/{{mes}}/$mes_actual/g;
+                s/{{anio}}/$anio_completo/g;
+                s/{{semana}}/$semana/g;
+                s/{{dia_semana}}/$dia_semana/g;
+                s/{{hora}}/$hora_actual/g;
+                s/{{timestamp}}/$(date +"%Y-%m-%d %H:%M:%S")/g
+            " "$archivo_diario"
+
+      # Agregar estas líneas al bloque sed -i para sustituir variables
+      s/{{variable_existente}}/valor/g
+
       echo "Archivo '$archivo_diario' creado con template '$template'"
     else
       echo "Template '$template' no encontrado. Usando template por defecto."
@@ -78,12 +101,8 @@ crear_diario() {
     echo "Archivo '$archivo_diario' creado (vacío)"
   fi
 
-  # Abrir el archivo en el editor predeterminado (opcional)
-  if [ -n "$EDITOR" ]; then
-    $EDITOR "$archivo_diario"
-  else
-    xdg-open "$archivo_diario" 2>/dev/null || echo "Abre manualmente: $archivo_diario"
-  fi
+  # Abrir el archivo en editor
+  ${EDITOR:-xdg-open} "$archivo_diario"
 }
 
 show_help() {
