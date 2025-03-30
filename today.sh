@@ -105,14 +105,43 @@ crear_diario() {
   ${EDITOR:-xdg-open} "$archivo_diario"
 }
 
+list_templates() {
+  echo -e "\nPlantillas disponibles en $TEMPLATE_DIR/:"
+  echo "---------------------------------------------"
+
+  if [ ! -d "$TEMPLATE_DIR" ] || [ -z "$(ls -A "$TEMPLATE_DIR")" ]; then
+    echo "No hay plantillas disponibles."
+    echo "Crea una con: today add-template <nombre>"
+    return 1
+  fi
+
+  for template in "$TEMPLATE_DIR"/*.md; do
+    template_name=$(basename "$template" .md)
+    description=$(head -n 1 "$template" | sed -e 's/^# //' -e 's/{{.*}}//g')
+
+    # Marcar plantilla por defecto
+    if [ "$template_name.md" == "$DEFAULT_TEMPLATE" ]; then
+      default_flag=" (Plantilla por defecto)"
+    else
+      default_flag=""
+    fi
+
+    echo -e "• ${template_name}${default_flag}"
+    [ -n "$description" ] && echo "  $description"
+  done
+
+  echo -e "\nUsa: today <nombre-plantilla> para usar una"
+}
+
 show_help() {
   echo "Uso: today [comando|template]"
   echo ""
   echo "Comandos disponibles:"
-  echo "  help              Muestra esta ayuda"
-  echo "  directorio        Crea solo el directorio del mes"
-  echo "  template          Crea el template por defecto"
-  echo "  add-template      Crea un nuevo template personalizado"
+  echo "  help                             Muestra esta ayuda"
+  echo "  --directorio                     Crea solo el directorio del mes"
+  echo "  template                         Crea el template por defecto"
+  echo "  --add-template nombre-template   Crea un nuevo template personalizado"
+  echo "  --list, -l                       Lista los templates disponibles"
   echo ""
   echo "Uso con templates:"
   echo "  today                     Crea diario con template por defecto"
@@ -128,19 +157,23 @@ show_help() {
 
 # Manejo de argumentos
 case "$1" in
-"directorio")
+"--directorio")
   crear_directorio
   ;;
 "template")
   crear_template_por_defecto
   echo "Template por defecto creado en: $TEMPLATE_DIR/$DEFAULT_TEMPLATE"
   ;;
-"add-template")
+"--add-template")
   if [ -z "$2" ]; then
     echo "Uso: $0 add-template <nombre-template>"
     exit 1
   fi
   $EDITOR "$TEMPLATE_DIR/$2.md" || vi "$TEMPLATE_DIR/$2.md"
+  ;;
+"--list" | "-l")
+  list_templates
+  exit 0
   ;;
 "help" | "--help" | "-h")
   show_help
