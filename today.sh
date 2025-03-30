@@ -86,6 +86,27 @@ crear_diario() {
   fi
 }
 
+show_help() {
+  echo "Uso: today [comando|template]"
+  echo ""
+  echo "Comandos disponibles:"
+  echo "  help              Muestra esta ayuda"
+  echo "  directorio        Crea solo el directorio del mes"
+  echo "  template          Crea el template por defecto"
+  echo "  add-template      Crea un nuevo template personalizado"
+  echo ""
+  echo "Uso con templates:"
+  echo "  today                     Crea diario con template por defecto"
+  echo "  today <nombre-template>   Crea diario con template específico"
+  echo ""
+  echo "Ejemplos:"
+  echo "  today                     Crea diario del día con template básico"
+  echo "  today reflexiones         Usa el template 'reflexiones'"
+  echo "  today add-template ideas  Crea nuevo template llamado 'ideas'"
+  echo ""
+  echo "Los templates se guardan en: $TEMPLATE_DIR"
+}
+
 # Manejo de argumentos
 case "$1" in
 "directorio")
@@ -101,6 +122,10 @@ case "$1" in
     exit 1
   fi
   $EDITOR "$TEMPLATE_DIR/$2.md" || vi "$TEMPLATE_DIR/$2.md"
+  ;;
+"help" | "--help" | "-h")
+  show_help
+  exit 0
   ;;
 *)
   crear_diario "$1"
