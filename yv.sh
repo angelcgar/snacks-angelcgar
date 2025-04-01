@@ -13,14 +13,18 @@ if [ "$1" == "new" ]; then
     #Primera carpeta
     mkdir 01_Grabacion/
     cd 01_Grabacion/
-    mkdir 01_Audio/
-    mkdir 02_Video/
+    mkdir "[Archivos de Audio Raw]"/
+    mkdir "[Archivos de Video Raw]"/
     cd ..
     #Segunda carpeta
     mkdir 02_Edicion/
     cd 02_Edicion/
-    #TODO: Determinar el editor de video
+    mkdir Proyecto_[$2].kdenlive/
     mkdir Exportaciones/
+    cd Exportaciones/
+    mkdir [$2]_V1.mp4/
+    mkdir [$2]_Miniatura.jpg/
+    cd ..
     cd ..
     #Tercera carpeta
     mkdir 03_Recursos/
