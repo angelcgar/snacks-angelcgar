@@ -8,6 +8,7 @@ DEFAULT_TEMPLATE="templete.md"
 create_project() {
   local project_name="$1"
   local safe_name=$(echo "$project_name" | tr ' ' '_' | tr -cd '[:alnum:]_')
+  local export_prefix="[$safe_name]"
 
   echo "Creando proyecto: $project_name"
   mkdir -p "$safe_name" || {
@@ -21,7 +22,8 @@ create_project() {
     ["01_Grabacion/Audio_Raw"]=""
     ["01_Grabacion/Video_Raw"]=""
     ["02_Edicion/Proyecto_$safe_name.kdenlive"]=""
-    ["02_Edicion/Exportaciones"]=""
+    ["02_Edicion/Exportaciones/${export_prefix}_V1.mp4"]=""
+    ["02_Edicion/Exportaciones/${export_prefix}_Miniatura.jpg"]=""
     ["03_Recursos/Musica"]=""
     ["03_Recursos/Imagenes"]=""
     ["03_Recursos/Graficos"]=""
@@ -49,7 +51,8 @@ create_project() {
   git commit -m "Initial commit: $project_name" >/dev/null
 
   echo "✅ Proyecto creado en: $(pwd)"
-  tree -L 2
+  echo "Estructura creada:"
+  tree -L 3 # Mostramos hasta nivel 3 para ver las nuevas carpetas
 }
 
 show_help() {
@@ -58,7 +61,7 @@ show_help() {
   echo "  yv help                  Muestra esta ayuda"
   echo ""
   echo "Ejemplo:"
-  echo "  yv new 'Mi Video Epico'"
+  echo "  yv new 'hola-mundo'"
 }
 
 # Main
