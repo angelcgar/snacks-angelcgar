@@ -28,21 +28,10 @@ load_templates() {
   LICENSE_TEXT=$(<"$LICENSE_TEMPLATE")
 }
 
-# Configurar licencia
-setup_license() {
-  local year=$(date +%Y)
-  local author=${GIT_NAME:-$(git config user.name || echo "Joe Doe")}
-
-  echo -e "${GREEN}✅ Creating LICENSE${NC}"
-  echo "${LICENSE_TEXT}" |
-    sed "s/{{YEAR}}/$year/g" |
-    sed "s/{{AUTHOR}}/$author/g" >LICENSE
-}
-
 # Inicializar proyecto
 init_project() {
   [ -f "package.json" ] && {
-    echo "package.json ya existe"
+    echo -e "❌ Error: package.json ya existe"
     exit 0
   }
 
@@ -51,10 +40,28 @@ init_project() {
 
   # Instalar dependencias
   echo -e "${GREEN}✅ Installing dependencies${NC}"
-  pnpm i -D typescript @types/node ts-node-dev rimraf @biomejs/biome dotenv env-var
+  pnpm install -D typescript @types/node ts-node-dev rimraf
 
   # Configuración TypeScript
   npx tsc --init --outDir dist/ --rootDir src
+
+  # Llamar a un Eslint
+  init_eslint
+
+  # Instalar primeras dependencias
+  init_dependencies
+}
+
+# TODO: Añadir reglas favoritas
+init_biome() {
+  echo -e "${GREEN}✅ Installing biome${NC}"
+  pnpm add --save-dev --save-exact @biomejs/biome
+  pnpm biome init
+}
+
+init_dependencies() {
+  echo -e "${GREEN}✅ Installing dependencies${NC}"
+  pnpm i dotenv env-var
 }
 
 # Configuración Git
@@ -65,6 +72,17 @@ setup_git() {
     echo -e "${GREEN}✅ Creating .gitignore${NC}"
     echo "$GITIGNORE" >.gitignore
   fi
+}
+
+# Configurar licencia
+setup_license() {
+  local year=$(date +%Y)
+  local author=${GIT_NAME:-$(git config user.name || echo "Joe Doe")}
+
+  echo -e "${GREEN}✅ Creating LICENSE${NC}"
+  echo "${LICENSE_TEXT}" |
+    sed "s/{{YEAR}}/$year/g" |
+    sed "s/{{AUTHOR}}/$author/g" >LICENSE
 }
 
 # Estructura del proyecto
