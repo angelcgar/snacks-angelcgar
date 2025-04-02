@@ -39,14 +39,14 @@ init_project() {
   pnpm init
 
   # Instalar dependencias
-  echo -e "${GREEN}✅ Installing dependencies${NC}"
+  echo -e "${GREEN}✅ Installing dependencies for development ${NC}"
   pnpm install -D typescript @types/node ts-node-dev rimraf
 
   # Configuración TypeScript
   npx tsc --init --outDir dist/ --rootDir src
 
   # Llamar a un Eslint
-  init_eslint
+  init_biome
 
   # Instalar primeras dependencias
   init_dependencies
@@ -60,7 +60,7 @@ init_biome() {
 }
 
 init_dependencies() {
-  echo -e "${GREEN}✅ Installing dependencies${NC}"
+  echo -e "${GREEN}✅ Installing dependencies for programming${NC}"
   pnpm i dotenv env-var
 }
 
