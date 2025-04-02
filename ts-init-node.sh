@@ -1,137 +1,98 @@
-#! /bin/bash
+#!/bin/bash
 
-# Colors for messages
+# Configuración
+TEMPLATES_DIR="$(dirname "$0")/templates"
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-# todo: testear este bloque de codigo
-# Verificar si jq está instalado
-echo -e "${BLUE}🔍 Checking dependencies...${NC}"
-if ! command -v jq &>/dev/null; then
-  echo "❌Error: 'jq' no está instalado. Por favor, instálalo antes de continuar." >&2
-  exit 1
-fi
+# Verificar dependencias
+check_dependencies() {
+  echo -e "${BLUE}🔍 Checking dependencies...${NC}"
+  for cmd in jq pnpm git; do
+    if ! command -v $cmd &>/dev/null; then
+      echo -e "❌ Error: '$cmd' no está instalado" >&2
+      exit 1
+    fi
+  done
+  echo -e "${GREEN}✅ Dependencias verificadas${NC}"
+}
 
-echo "'jq' está instalado. Continuando..."
+# Cargar plantillas
+load_templates() {
+  source "$TEMPLATES_DIR/gitignore.bash"
+  LICENSE_TEMPLATE=$(<"$TEMPLATES_DIR/LICENSE")
+}
 
-# Verificar si pnpm está instalado
-if ! command -v pnpm &>/dev/null; then
-  echo "❌Error: 'pnpm' no está instalado. Por favor, instálalo antes de continuar." >&2
-  exit 1
-fi
+# Configurar licencia
+setup_license() {
+  local year=$(date +%Y)
+  local author=${GIT_NAME:-$(git config user.name || echo "Joe Doe")}
 
-# Verificar si git está configurado
-# if [ -z "$GIT_NAME" ] || [ -z "$GIT_EMAIL" ]; then
-#   echo "❌ Error: Git user.name or user.email are not configured"
-#   exit 1
-# fi
+  echo -e "${GREEN}✅ Creating LICENSE${NC}"
+  echo "${LICENSE_TEMPLATE}" |
+    sed "s/{{YEAR}}/$year/g" |
+    sed "s/{{AUTHOR}}/$author/g" >LICENSE
+}
 
-# Verificar si ya existe un package.json
-if [ -f "package.json" ]; then
-  echo "El archivo package.json ya existe. No se realizarán cambios."
-  exit 0
-fi
+# Inicializar proyecto
+init_project() {
+  [ -f "package.json" ] && {
+    echo "package.json ya existe"
+    exit 0
+  }
 
-# Inicializamos el proyecto
-echo -e "${BLUE}🚀 Starting Node.js with TypeScript project setup...${NC}"
-pnpm init
+  echo -e "${BLUE}🚀 Starting Node.js with TypeScript project setup...${NC}"
+  pnpm init
 
-echo -e "${GREEN}✅ Installing TypeScript dependencies${NC}"
-pnpm i -D typescript @types/node ts-node-dev rimraf
+  # Instalar dependencias
+  echo -e "${GREEN}✅ Installing dependencies${NC}"
+  pnpm i -D typescript @types/node ts-node-dev rimraf @biomejs/biome dotenv env-var
 
-echo -e "${GREEN}✅ Installing and configuring biome${NC}"
-pnpm add --save-dev --save-exact @biomejs/biome
-# TODO: Agregar configuración de biome
+  # Configuración TypeScript
+  npx tsc --init --outDir dist/ --rootDir src
+}
 
-# Iniciamos el proyecto TypeScript
-npx tsc --init --outDir dist/ --rootDir src
+# Configuración Git
+setup_git() {
+  [ -d ".git" ] || git init
 
-# Recursos para gitignore
-source gitignore.bash
+  if [ ! -f ".gitignore" ]; then
+    echo -e "${GREEN}✅ Creating .gitignore${NC}"
+    echo "$GITIGNORE" >.gitignore
+  fi
+}
 
-# TODO: Agregar configuración para jest
-echo -e "${GREEN}✅ Configuring package.json${NC}"
-
-# Eliminamos el primer script de test
-jq "del(.scripts.test)" package.json >tempackage.json && mv tempackage.json package.json
-
-# Agregamos los scripts de desarrollo, construcción y ejecución
-jq '.scripts += {
-  "dev": "tsnd --respawn --clear src/app.ts",
-  "build": "rimraf ./dist && tsc",
-  "start": "npm run build && node dist/app.js"
-}' package.json >temp.json && mv temp.json package.json
-
-# Inicializar repositorio Git
-if [ ! -d ".git" ]; then
-  echo -e "${GREEN}Inicializando repositorio Git..."
-
-  git init
-fi
-
-# Inicializar configuración de Git
-if [ ! -f ".gitignore" ]; then
-  touch .gitignore
-
-  echo "$GITIGNORE" >>.gitignore
-fi
-
-echo "Repositorio Git ya está inicializado."
-
-# crear Readme
-echo -e "${GREEN}✅ Creating README.md${NC}"
-echo "# $(basename "$PWD")" >README.md
-
-# Crear LICENSE
-
-echo -e "${GREEN}✅ Creating LICENSE${NC}"
-
-# TODO: Sacar este texto a un archivo
-cat >LICENSE <<EOF
-MIT License
-
-Copyright (c) $(date +%Y) $GIT_NAME
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-EOF
-
-echo -e "${GREEN}✅ Creating project structure${NC}"
-
-mkdir src/
-touch src/app.ts
-
-cat >src/app.ts <<EOF
+# Estructura del proyecto
+create_structure() {
+  echo -e "${GREEN}✅ Creating project structure${NC}"
+  mkdir -p src/
+  cat >src/app.ts <<EOF
 import 'dotenv/config';
 
 console.log('Hello Node');
 console.log('Environment:', process.env.NODE_ENV);
 EOF
 
-echo -e "${GREEN}✅ Setting up environment variables${NC}"
-echo "NODE_ENV=development" >.env
+  echo "NODE_ENV=development" >.env
+  echo "# $(basename "$PWD")" >README.md
+}
 
-# TODO: Agregar Github Actions
+# Main
+check_dependencies
+load_templates
+init_project
+setup_git
+setup_license
+create_structure
 
-echo -e "${GREEN}✅ Installing dotenv${NC}"
-pnpm install dotenv env-var
+# TODO: añadir scripts para los tests
+# Configurar scripts
+jq 'del(.scripts.test) | .scripts += {
+  "dev": "tsnd --respawn --clear src/app.ts",
+  "build": "rimraf ./dist && tsc",
+  "start": "npm run build && node dist/app.js"
+}' package.json >temp.json && mv temp.json package.json
 
 echo -e "${BLUE}🎉 Project setup completed successfully!${NC}"
-echo -e "${BLUE}📝 You can start developing with:${NC}"
-echo -e "${GREEN}   pnpm run dev${NC}"
+echo -e "${BLUE}📝 Start developing with:${NC} ${GREEN}pnpm run dev${NC}"
