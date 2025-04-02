@@ -1,10 +1,14 @@
 #!/bin/bash
 
 # Configuración
-TEMPLATES_DIR="$(dirname "$0")/templates"
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m'
+
+# Configuración de rutas para plantillas
+CONFIG_DIR="$HOME/.config/ts-init-node"
+GITIGNORE_TEMPLATE="$CONFIG_DIR/gitignore.bash"
+LICENSE_TEMPLATE="$CONFIG_DIR/LICENSE"
 
 # Verificar dependencias
 check_dependencies() {
@@ -20,8 +24,8 @@ check_dependencies() {
 
 # Cargar plantillas
 load_templates() {
-  source "$TEMPLATES_DIR/gitignore.bash"
-  LICENSE_TEMPLATE=$(<"$TEMPLATES_DIR/LICENSE")
+  source $GITIGNORE_TEMPLATE
+  LICENSE_TEXT=$(<"$LICENSE_TEMPLATE")
 }
 
 # Configurar licencia
@@ -30,7 +34,7 @@ setup_license() {
   local author=${GIT_NAME:-$(git config user.name || echo "Joe Doe")}
 
   echo -e "${GREEN}✅ Creating LICENSE${NC}"
-  echo "${LICENSE_TEMPLATE}" |
+  echo "${LICENSE_TEXT}" |
     sed "s/{{YEAR}}/$year/g" |
     sed "s/{{AUTHOR}}/$author/g" >LICENSE
 }
