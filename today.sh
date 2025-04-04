@@ -62,6 +62,12 @@ crear_diario() {
     archivo_diario="$fecha.md"
   fi
 
+  if [ -f "$archivo_diario" ]; then
+    echo "El archivo '$archivo_diario' ya existe. Abriendo..."
+    ${EDITOR:-xdg-open} "$archivo_diario"
+    return 0
+  fi
+
   # Variables disponibles
   local semana=$(date +"%V")
   local dia_semana=$(date +"%A")
@@ -163,9 +169,9 @@ show_help() {
   echo "  today <nombre-template>   Crea diario con template específico"
   echo ""
   echo "Ejemplos:"
-  echo "  today                     Crea diario del día con template básico"
-  echo "  today reflexiones         Usa el template 'reflexiones'"
-  echo "  today add-template ideas  Crea nuevo template llamado 'ideas'"
+  echo "  today                       Crea diario del día con template básico"
+  echo "  today reflexiones           Usa el template 'reflexiones'"
+  echo "  today --add-template ideas  Crea nuevo template llamado 'ideas'"
   echo ""
   echo "Los templates se guardan en: $TEMPLATE_DIR"
 }
