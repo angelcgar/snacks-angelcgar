@@ -88,7 +88,7 @@ crear_diario() {
             " "$archivo_diario"
 
       # Agregar estas líneas al bloque sed -i para sustituir variables
-      s/{{variable_existente}}/valor/g
+      # s/{{variable_existente}}/valor/g
 
       echo "Archivo '$archivo_diario' creado con template '$template'"
     else
@@ -133,15 +133,30 @@ list_templates() {
   echo -e "\nUsa: today <nombre-plantilla> para usar una"
 }
 
+commit_today() {
+  local nombre_directorio="$anio-$mes-${meses[$mes]}"
+  local archivo_diario="$nombre_directorio/$fecha.md"
+
+  if [ ! -f "$archivo_diario" ]; then
+    echo "No se encontró el diario de hoy. Crea uno primero."
+    return 1
+  fi
+
+  git add "$archivo_diario"
+  git commit -m "$fecha"
+  echo "Commit creado para el diario de hoy: $archivo_diario"
+}
+
 show_help() {
   echo "Uso: today [comando|template]"
   echo ""
   echo "Comandos disponibles:"
-  echo "  help                             Muestra esta ayuda"
+  echo "  --help                           Muestra esta ayuda"
   echo "  --directorio                     Crea solo el directorio del mes"
-  echo "  template                         Crea el template por defecto"
   echo "  --add-template nombre-template   Crea un nuevo template personalizado"
   echo "  --list, -l                       Lista los templates disponibles"
+  echo "  --commit-today                   Crea un commit con el diario de hoy"
+  echo "  template                         Crea el template por defecto"
   echo ""
   echo "Uso con templates:"
   echo "  today                     Crea diario con template por defecto"
@@ -157,12 +172,12 @@ show_help() {
 
 # Manejo de argumentos
 case "$1" in
-"--directorio")
-  crear_directorio
-  ;;
 "template")
   crear_template_por_defecto
   echo "Template por defecto creado en: $TEMPLATE_DIR/$DEFAULT_TEMPLATE"
+  ;;
+"--directorio")
+  crear_directorio
   ;;
 "--add-template")
   if [ -z "$2" ]; then
@@ -177,6 +192,10 @@ case "$1" in
   ;;
 "help" | "--help" | "-h")
   show_help
+  exit 0
+  ;;
+"--commit-today")
+  commit_today
   exit 0
   ;;
 *)
