@@ -55,6 +55,8 @@ crear_diario() {
   local nombre_directorio="$anio-$mes-${meses[$mes]}"
   local archivo_diario
 
+  local directorio_de_ejecucion=$(pwd)
+
   # Determinar ubicación del archivo
   if [ -d "$nombre_directorio" ]; then
     archivo_diario="$nombre_directorio/$fecha.md"
@@ -66,6 +68,12 @@ crear_diario() {
     echo "El archivo '$archivo_diario' ya existe. Abriendo..."
     ${EDITOR:-xdg-open} "$archivo_diario"
     return 0
+  fi
+
+  # TODO: Manejar rutas absolutas en caso de que el script se ejecute desde otro directorio
+  if [ "$directorio_de_ejecucion" != "$HOME/Documentos/reflexiones" ]; then
+    echo "Error. No estas en la carpeta de tu diario. $HOME/Documentos/reflexiones"
+    exit 1
   fi
 
   # Variables disponibles
