@@ -58,7 +58,7 @@ organizar_archivos() {
     for ext in ${EXTENSIONES[$categoria]}; do
       while IFS= read -r -d '' archivo; do
         mv -v "$archivo" "$destino" && ((contador++))
-      done < <(find "$origen" -type f -iname "*.$ext" -print0)
+      done < <(find "$origen" -type f ! -path '*/.*' -iname "*.$ext" -print0)
     done
 
     contador_categorias[$categoria]=$contador
