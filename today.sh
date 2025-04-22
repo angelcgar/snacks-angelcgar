@@ -5,7 +5,7 @@ TEMPLATE_DIR="$HOME/.config/today-templates"
 DEFAULT_TEMPLATE="diario.md"
 
 # Crear directorio de templates si no existe
-mkdir -p "$TEMPLATE_DIR"
+# mkdir -p "$TEMPLATE_DIR"
 
 # Obtener fechas
 fecha=$(date +"%d-%m-%Y")
@@ -210,6 +210,14 @@ case "$1" in
   ;;
 "--commit-today")
   commit_today
+  exit 0
+  ;;
+"--show-template")
+  if [ -z "$2" ]; then
+    echo "Uso: $0 --show-template <nombre-template>"
+    exit 1
+  fi
+  cat "$TEMPLATE_DIR/$2.md"
   exit 0
   ;;
 *)
