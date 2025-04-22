@@ -8,9 +8,13 @@ DEFAULT_TEMPLATE="diario.md"
 # mkdir -p "$TEMPLATE_DIR"
 
 # Obtener fechas
+# Obtener fecha actual en formato dd-mm-YYYY
 fecha=$(date +"%d-%m-%Y")
+# Obtener los dos ultimos digitos del año
 anio=$(date +"%y")
+# Obtener el mes en formato 2 digitos
 mes=$(date +"%m")
+# Obtener el día en formato 2 digitos
 dia=$(date +"%d")
 
 # Mapeo de meses
@@ -77,10 +81,15 @@ crear_diario() {
   fi
 
   # Variables disponibles
+  # Numero de la semana relativo al año
   local semana=$(date +"%V")
+  # Nombre del día de la semana
   local dia_semana=$(date +"%A")
+  # Hora en formato HH:MM
   local hora_actual=$(date +"%H:%M")
+  # Nombre del mes en español
   local mes_actual=${meses[$mes]}
+  # Año completo
   local anio_completo="20$anio"
 
   # Crear archivo con template
