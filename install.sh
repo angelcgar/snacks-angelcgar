@@ -4,6 +4,8 @@
 nombre_programa="today"
 script_name="today.sh"
 
+TEMPLATE_DIR="$HOME/.config/today-templates"
+
 # Directorio de instalación
 install_dir="$HOME/.local/bin"
 
@@ -41,4 +43,15 @@ if cp "$script_name" "$install_dir/$nombre_programa"; then
 else
   echo "Error: No se pudo instalar $nombre_programa"
   exit 1
+fi
+
+# Crear archivo de configuración
+if [ ! -d "$TEMPLATE_DIR" ]; then
+  echo "Creando directorio de plantillas en $TEMPLATE_DIR..."
+  mkdir -p "$TEMPLATE_DIR" || {
+    echo "Error: No se pudo crear el directorio de plantillas $TEMPLATE_DIR"
+    exit 1
+  }
+  git clone https://github.com/angelcgar/today-sh-templates.git --depth 1 "$TEMPLATE_DIR"
+  rm -rf "$TEMPLATE_DIR/.git"
 fi
