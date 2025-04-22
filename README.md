@@ -1,8 +1,5 @@
 # 📓 Today.sh - Gestor Inteligente de Diarios
 
-![Bash Badge](https://img.shields.io/badge/Script-Bash-4EAA25?logo=gnubash)
-![License](https://img.shields.io/badge/Licencia-MIT-green)
-
 ## 🚀 Instalación Rápida
 
 ```bash
