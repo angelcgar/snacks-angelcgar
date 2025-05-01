@@ -98,4 +98,7 @@ case "$1" in
 "" | "help" | "--help" | "-h")
   show_help
   ;;
+*)
+  funcion_helper_1 "$1"
+  ;;
 esac
