@@ -99,6 +99,6 @@ case "$1" in
   show_help
   ;;
 *)
-  funcion_helper_1 "$1"
+  primera_funcion "$1"
   ;;
 esac
