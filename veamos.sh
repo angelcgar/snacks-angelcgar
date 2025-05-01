@@ -28,7 +28,7 @@ case "$1" in
 "")
   echo "Hola desde la función por defecto"
   ;;
-*)
+"" | "help" | "--help" | "-h")
   show_help
   ;;
 esac
