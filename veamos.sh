@@ -1,7 +1,16 @@
 #!/bin/bash
 
+NOMBRE_PROYECTO="nombre_proyecto_default"
+
 primera_funcion() {
-  echo "Hola desde la primera función"
+  echo "Iniciando instalacion limpia de un proyecto de React con vite"
+  # ? Usar $1 o $2, por que se usa $1 para determinar cual eslinter usar y $2 para el nombre del proyecto
+  pnpm create vite@latest "$1" --template react-ts
+  cd "$1" || {
+    echo "Error: No se pudo cambiar al directorio $1"
+    exit 1
+  }
+  pnpm install
 }
 
 segunda_funcion() {
