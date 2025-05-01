@@ -92,8 +92,15 @@ case "$1" in
   funcion_helper_1 "$2"
   echo "Hola desde la función helper 1"
   ;;
-"")
-  echo "Hola desde la función por defecto"
+"--use-biome")
+  if [ -z "$2" ]; then
+    echo "Error: Se requiere un nombre de proyecto después de --use-eslint"
+    exit 1
+  fi
+  # funcion_helper_1 "$2"
+  echo "Usar biome"
+  echo "no inplemetado"
+  exit 0
   ;;
 "" | "help" | "--help" | "-h")
   show_help
