@@ -103,6 +103,7 @@ crear_diario() {
                 s/{{fecha}}/$dia de $mes_actual de $anio_completo/g;
                 s/{{dia}}/$dia/g;
                 s/{{mes}}/$mes_actual/g;
+                s/{{mes_date}}/$mes/g;
                 s/{{anio}}/$anio_completo/g;
                 s/{{semana}}/$semana/g;
                 s/{{dia_semana}}/$dia_semana/g;
