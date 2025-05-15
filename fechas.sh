@@ -19,7 +19,7 @@ anio_completo=$(date +"%Y")
 mes_numero=$(date +"%m")
 dia_numero=$(date +"%d")
 semana_anio=$(date +"%V")
-dia_semana_ingles=$(date +"%A")
+dia_semana_espanol=$(date +"%A")
 hora_actual=$(date +"%H:%M")
 
 # Convertir a español
@@ -33,7 +33,7 @@ echo "Día del mes: $dia_numero"
 echo "Mes: $mes_actual ($mes_numero)"
 echo "Año: $anio_completo (abreviado: $anio_abreviado)"
 echo "Semana del año: $semana_anio"
-echo "Día de la semana: $dia_semana_ingles"
+echo "Día de la semana: $dia_semana_espanol"
 echo "Hora actual: $hora_actual"
 echo "----------------------------------"
 echo "Fecha completa: $dia_semana_espanol, $dia_numero de $mes_actual de $anio_completo"
