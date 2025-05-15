@@ -37,7 +37,7 @@ echo "Instalando $nombre_programa en $install_dir..."
 if cp "$script_name" "$install_dir/$nombre_programa"; then
   chmod +x "$install_dir/$nombre_programa"
   echo "Instalación completada exitosamente."
-  echo "Puedes ejecutar el programa con: $nombre_programa archivo_interes.ext"
+  echo "Puedes ejecutar el programa con: $nombre_programa"
 else
   echo "Error: No se pudo instalar $nombre_programa"
   exit 1
