@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Nombre del programa y del script
-nombre_programa="inicio"
-script_name="inicio.sh"
+nombre_programa="organizar"
+script_name="organizar.sh"
 
 # Directorio de instalación
 install_dir="$HOME/.local/bin"
