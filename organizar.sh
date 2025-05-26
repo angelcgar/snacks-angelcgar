@@ -6,9 +6,9 @@
 # Configuración de directorios
 declare -A DIRECTORIOS=(
   ["LIBROS"]="$HOME/Documentos/Libros"
-  ["MUSICA"]="$HOME/Música"
+  ["MUSICA"]="$HOME/Musica"
   ["VIDEOS"]="$HOME/Videos"
-  ["IMAGENES"]="$HOME/Imágenes"
+  ["IMAGENES"]="$HOME/Imagenes"
   ["DOCUMENTOS"]="$HOME/Documentos"
   ["COMPRIMIDOS"]="$HOME/Documentos/Comprimidos"
   ["PROGRAMAS"]="$HOME/Descargas/Programas"
