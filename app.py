@@ -5,7 +5,8 @@ import argparse
 from datetime import datetime
 
 # Configuración
-BITACORAS_DIR = "/home/user/Documentos/bitacoras"
+BITACORAS_DIR = os.path.join(os.path.expanduser("~"), "bitacoras_diarias")
+# print(f"Directorio de bitácoras: {BITACORAS_DIR}")
 PLANTILLA = """# Bitácora - {fecha}
 
 ## Objetivo
@@ -73,19 +74,52 @@ def listar_bitacoras():
         print(f"{i}. {bitacora}")
 
 def main():
-    parser = argparse.ArgumentParser(description='Gestor de Bitácoras - Crea y administra plantillas de bitácoras')
-    subparsers = parser.add_subparsers(dest='comando', help='Comandos disponibles')
+    parser = argparse.ArgumentParser(
+        description='Gestor de Bitácoras - Sistema para crear y administrar registros de actividades diarias',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""Ejemplos de uso:
+        %(prog)s crear -n "proyecto_alpha"  Crea bitácora con nombre descriptivo
+        %(prog)s crear                      Crea bitácora con fecha automática
+        %(prog)s listar                     Muestra todas las bitácoras disponibles
+
+        Las bitácoras se guardan en: {}/""".format(BITACORAS_DIR)
+    )
+
+    subparsers = parser.add_subparsers(
+        title='comandos',
+        dest='comando',
+        description='Operaciones disponibles',
+        metavar='COMANDO'
+    )
 
     # Comando para crear nueva bitácora
-    crear_parser = subparsers.add_parser('crear', help='Crear una nueva bitácora')
-    crear_parser.add_argument('-n', '--nombre', help='Nombre descriptivo para la bitácora (opcional)')
+    crear_parser = subparsers.add_parser(
+        'crear',
+        help='Genera una nueva plantilla de bitácora',
+        description='Crea un nuevo archivo de bitácora con estructura predefinida'
+    )
+    crear_parser.add_argument(
+        '-n', '--nombre',
+        help='Identificador opcional para la bitácora (ej: nombre_proyecto)',
+        metavar='NOMBRE'
+    )
 
     # Comando para listar bitácoras
-    listar_parser = subparsers.add_parser('listar', help='Listar todas las bitácoras existentes')
+    listar_parser = subparsers.add_parser(
+        'listar',
+        help='Muestra el listado de bitácoras',
+        description='Enumera todas las bitácoras existentes con su fecha de creación'
+    )
+    listar_parser.add_argument(
+        '-v', '--verbose',
+        action='store_true',
+        help='Muestra detalles adicionales de las bitácoras'
+    )
 
     args = parser.parse_args()
 
     if args.comando == 'crear':
+        # print("Creando bitácora...")
         crear_bitacora(args.nombre)
     elif args.comando == 'listar':
         listar_bitacoras()
