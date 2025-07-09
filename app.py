@@ -136,12 +136,18 @@ def main():
     crear_parser.add_argument(
         '-n', '--nombre',
         help='Identificador opcional para la bitácora (ej: nombre_proyecto)',
-        metavar='NOMBRE'
+        metavar='NOMBRE',
+        default=None,
+        type=str,
+        nargs='?'  # Permite que el argumento sea opcional
     )
-    crear_parser.add_argument('-p', '--plantilla',
-        help='Plantilla a usar',
+    crear_parser.add_argument(
+        '-p', '--plantilla',
+        help='Nombre de la plantilla a usar para la bitácora (default: "default")',
+        metavar='PLANTILLA',
         choices=list(plantillas.keys()),
-        default='default'
+        default='default',
+        type=str,
     )
 
     # Comando para listar bitácoras
