@@ -42,7 +42,11 @@ def cargar_configuracion() -> dict[str, str]:
     return {
         "log_directory": datos['configuration']['paths']['log_directory'],
         "log_config_directory": datos['configuration']['paths']['log_config_directory'],
-        "log_directory": datos['configuration']['paths']['log_directory'],
+        "log_config_file": datos['configuration']['paths']['log_config_file'],
+        "user_executable_path": datos['configuration']['paths']['user_executable_path'],
+        "user": datos['configuration']['user'],
+        "name": datos['name'],
+        "version": datos['version'],
     }
 
 def cargar_plantillas() -> dict[str, str]:
