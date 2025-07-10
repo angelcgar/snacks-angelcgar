@@ -10,8 +10,7 @@ import json
 HOME_USER = os.path.expanduser("~")
 SYSTEM_USER = getpass.getuser()
 BITACORAS_DIR = os.path.join(HOME_USER, "bitacoras_diarias")
-CONFIGURATION_DIRECTORY = os.path.join(HOME_USER, ".config", "bitacora_cli_config")
-CONFIG_FILE_PATH = os.path.join(CONFIGURATION_DIRECTORY,"bitacora_cli_config.json")
+CONFIG_FILE_PATH = os.path.join(HOME_USER, ".config", "bitacora_cli_config", "bitacora_cli_config.json")
 
 DEFAULT_TEMPLATE = """# Bitácora - {fecha}
 
@@ -36,17 +35,29 @@ Describir el objetivo de esta sesión de trabajo.
 - [ ] Siguiente tarea 2
 """
 
+def cargar_configuracion() -> dict[str, str]:
+    with open(CONFIG_FILE_PATH, "r", encoding='utf-8') as archivo:
+        datos = json.load(archivo)
+
+    # print(datos['name'])
+    return {
+        "log_directory": datos['configuration']['paths']['log_directory'],
+        "log_config_directory": datos['configuration']['paths']['log_config_directory'],
+    }
+
 def cargar_plantillas() -> dict[str, str]:
     """Carga las plantillas desde el directorio de configuración"""
     plantillas: dict[str, str] = {
         "default": DEFAULT_TEMPLATE
     }
 
-    if os.path.exists(CONFIGURATION_DIRECTORY):
-        for file in os.listdir(CONFIGURATION_DIRECTORY):
+    configuration_directory = cargar_configuracion()['log_config_directory']
+
+    if os.path.exists(configuration_directory):
+        for file in os.listdir(configuration_directory):
             if file.endswith(".md"):
                 name = os.path.splitext(file)[0]
-                with open(os.path.join(CONFIGURATION_DIRECTORY, file), 'r') as f:
+                with open(os.path.join(configuration_directory, file), 'r') as f:
                     plantillas[name] = f.read()
 
     return plantillas
@@ -89,8 +100,10 @@ def listar_plantillas(show_details: str | None = None):
     """Muestra las plantillas disponibles"""
     plantillas = cargar_plantillas()
 
+    configuration_directory = cargar_configuracion()['log_config_directory']
+
     if show_details:
-        ruta_p = os.path.join(CONFIGURATION_DIRECTORY, show_details)
+        ruta_p = os.path.join(configuration_directory, show_details)
         if not ruta_p.endswith('.md'):
             ruta_p += '.md'
 
