@@ -86,9 +86,11 @@ def listar_plantillas(show_details: str | None = None):
     plantillas = cargar_plantillas()
 
     if show_details:
-        ruta_c = os.path.join(CONFIG_DIR, show_details)
-        ruta_c = ruta_c + ".md"
-        with open(ruta_c, 'r') as f:
+        ruta_p = os.path.join(CONFIG_DIR, show_details)
+        if not ruta_p.endswith('.md'):
+            ruta_p += '.md'
+
+        with open(ruta_p, 'r') as f:
             print(f.read())
 
         return
@@ -121,6 +123,7 @@ def main():
         %(prog)s crear -n "proyecto_alpha"  Crea bitácora con nombre descriptivo
         %(prog)s crear                      Crea bitácora con fecha automática
         %(prog)s listar                     Muestra todas las bitácoras disponibles
+        %(prog)s plantillas                 Muestra todas las plantillas disponibles
 
         Las bitácoras se guardan en: {}/""".format(BITACORAS_DIR)
     )
@@ -161,6 +164,7 @@ def main():
         help='Muestra el listado de bitácoras',
         description='Enumera todas las bitácoras existentes con su fecha de creación'
     )
+    # FIXME: Añadir argumento para mostrar detalles de las bitácoras
     listar_parser.add_argument(
         '-v', '--verbose',
         action='store_true',
@@ -185,7 +189,6 @@ def main():
     args = parser.parse_args()
 
     if args.comando == 'crear':
-        # print("Creando bitácora...")
         crear_bitacora(args.nombre, args.plantilla)
     elif args.comando == 'listar':
         listar_bitacoras()
