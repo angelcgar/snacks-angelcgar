@@ -8,6 +8,10 @@ import json
 from typing import Dict, Any
 
 CONFIGURATION_DIRECTORY = os.path.join(os.path.expanduser("~"), ".config", "bitacora_cli_config")
+SYSTEM_USER = getpass.getuser()
+USER_EXECUTABLE_PATH = os.path.join(os.path.expanduser("~"), ".local", "bin")
+CONFIG_FILE_PATH = os.path.join(CONFIGURATION_DIRECTORY,"bitacora_cli_config.json")
+LOG_DIRECTORY = os.path.join(os.path.expanduser("~"), "bitacoras_diarias")
 
 def load_config():
     print("Cargando configuración...")
@@ -15,38 +19,28 @@ def load_config():
         "name": "bitacora_cli",
         "version": "1.0.0",
         "configuration": {
-            "user": getpass.getuser(),
+            "user": SYSTEM_USER,
             "paths": {
-                "log_directory": os.path.join(os.path.expanduser("~"), "bitacoras_diarias"),
+                "log_directory": LOG_DIRECTORY,
                 "log_config_directory": CONFIGURATION_DIRECTORY,
-                "log_config_file": os.path.join(CONFIGURATION_DIRECTORY, "bitacora_cli_config.json"),
+                "log_config_file": CONFIG_FILE_PATH,
+                "user_executable_path": USER_EXECUTABLE_PATH,
             }
         },
     }
 
-    config_file_path = os.path.join(os.path.expanduser("~"), ".config", "bitacora_cli_config","bitacora_cli_config.json")
-
-    if os.path.exists(config_file_path):
-        print(f"El archivo de configuración ya existe: {config_file_path}")
-        print("Se eliminará y se volverá a guardar los datos.")
-        os.remove(config_file_path)
-
     # Guardar datos en un archivo JSON
-    with open(config_file_path, "w", encoding='utf-8') as f:
+    with open(CONFIG_FILE_PATH, "w", encoding='utf-8') as f:
         json.dump(config_data, f, indent=4)
     print("Datos guardados en datos.json")
 
 def install_cli():
-    user = getpass.getuser()
-
-    local_bin = os.path.join(os.path.expanduser("~"), ".local", "bin")
-
     # Obtener la ruta del directorio actual
     current_dir = os.path.dirname(os.path.abspath(__file__))
     cli_source = os.path.join(current_dir, "app.py")  # Ahora apunta a app.py
 
     # Crear directorios si no existen
-    Path(local_bin).mkdir(parents=True, exist_ok=True)
+    Path(USER_EXECUTABLE_PATH).mkdir(parents=True, exist_ok=True)
     Path(CONFIGURATION_DIRECTORY).mkdir(parents=True, exist_ok=True)
 
     # Clonar repositorio de plantillas
@@ -71,7 +65,7 @@ def install_cli():
         print("Se usará la plantilla por defecto")
 
     # Copiar el CLI (app.py) con nombre 'bitacora'
-    cli_path = os.path.join(local_bin, "bitacora")
+    cli_path = os.path.join(USER_EXECUTABLE_PATH, "bitacora")
     try:
         shutil.copy(cli_source, cli_path)
         os.chmod(cli_path, 0o755)
@@ -83,8 +77,8 @@ def install_cli():
 
     load_config()
 
-    print(f"\nInstalación completada {user}. Puedes usar el comando 'bitacora' desde cualquier lugar")
+    print(f"\nInstalación completada {SYSTEM_USER}. Puedes usar el comando 'bitacora' desde cualquier lugar")
 
 if __name__ == "__main__":
-    install_cli()
-    # load_config()
+    # install_cli()
+    load_config()
