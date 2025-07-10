@@ -8,7 +8,7 @@ import getpass
 # Configuración
 user = getpass.getuser()
 BITACORAS_DIR = os.path.join(os.path.expanduser("~"), "bitacoras_diarias")
-CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".config", "bitacoras_diarias")
+CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".config", "bitacora_cli_config")
 DEFAULT_TEMPLATE = """# Bitácora - {fecha}
 
 ## Objetivo
