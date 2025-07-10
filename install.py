@@ -11,6 +11,10 @@ def install_cli():
     local_bin = os.path.join(os.path.expanduser("~"), ".local", "bin")
     config_dir = os.path.join(os.path.expanduser("~"), ".config", "bitacora_cli_config")
 
+    # Obtener la ruta del directorio actual
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    cli_source = os.path.join(current_dir, "app.py")  # Ahora apunta a app.py
+
     # Crear directorios si no existen
     Path(local_bin).mkdir(parents=True, exist_ok=True)
     Path(config_dir).mkdir(parents=True, exist_ok=True)
@@ -18,7 +22,7 @@ def install_cli():
     # Clonar repositorio de plantillas
     # TODO: Cambiar la URL del repositorio a tu repositorio real
     print("Clonando repositorio de plantillas...")
-    repo_url = "https://github.com/user/todo.git"
+    repo_url = "https://github.com/angelcgar/bitacoras_diarias_templates.git"
 
     try:
         if os.path.exists(config_dir):
@@ -36,17 +40,18 @@ def install_cli():
         print(f"⚠ Error al clonar repositorio: {e}")
         print("Se usará la plantilla por defecto")
 
-    # Copiar el CLI
+    # Copiar el CLI (app.py) con nombre 'bitacora'
     cli_path = os.path.join(local_bin, "bitacora")
     try:
-        current_file = __file__
-        shutil.copy(current_file, cli_path)
+        shutil.copy(cli_source, cli_path)
         os.chmod(cli_path, 0o755)
         print(f"✓ CLI instalado en: {cli_path}")
     except Exception as e:
         print(f"⚠ Error al instalar CLI: {e}")
+        if not os.path.exists(cli_source):
+            print(f"Error: No se encontró el archivo app.py en {current_dir}")
 
-    print("\nInstalación completada. Puedes usar el comando 'bitacora' desde cualquier lugar")
+    print(f"\nInstalación completada {user}. Puedes usar el comando 'bitacora' desde cualquier lugar")
 
 if __name__ == "__main__":
     install_cli()
