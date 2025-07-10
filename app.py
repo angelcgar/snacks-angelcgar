@@ -9,7 +9,6 @@ import json
 # Configuración
 HOME_USER = os.path.expanduser("~")
 SYSTEM_USER = getpass.getuser()
-BITACORAS_DIR = os.path.join(HOME_USER, "bitacoras_diarias")
 CONFIG_FILE_PATH = os.path.join(HOME_USER, ".config", "bitacora_cli_config", "bitacora_cli_config.json")
 
 DEFAULT_TEMPLATE = """# Bitácora - {fecha}
@@ -43,6 +42,7 @@ def cargar_configuracion() -> dict[str, str]:
     return {
         "log_directory": datos['configuration']['paths']['log_directory'],
         "log_config_directory": datos['configuration']['paths']['log_config_directory'],
+        "log_directory": datos['configuration']['paths']['log_directory'],
     }
 
 def cargar_plantillas() -> dict[str, str]:
@@ -64,13 +64,18 @@ def cargar_plantillas() -> dict[str, str]:
 
 def verificar_directorio():
     """Verifica si el directorio de bitácoras existe, si no, lo crea."""
-    if not os.path.exists(BITACORAS_DIR):
-        os.makedirs(BITACORAS_DIR)
-        print(f"Directorio creado: {BITACORAS_DIR}")
+
+    bitacoras_dir = cargar_configuracion()['log_directory']
+
+    if not os.path.exists(bitacoras_dir):
+        os.makedirs(bitacoras_dir)
+        print(f"Directorio creado: {bitacoras_dir}")
 
 def crear_bitacora(nombre: str | None = None, plantilla: str | None = None):
     """Crea una nueva bitácora con la plantilla predeterminada."""
     verificar_directorio()
+
+    bitacoras_dir = cargar_configuracion()['log_directory']
 
     plantillas = cargar_plantillas()
     if plantilla is None:
@@ -84,7 +89,7 @@ def crear_bitacora(nombre: str | None = None, plantilla: str | None = None):
     else:
         nombre_archivo = f"bitacora_{fecha_actual}.md"
 
-    ruta_completa = os.path.join(BITACORAS_DIR, nombre_archivo)
+    ruta_completa = os.path.join(bitacoras_dir, nombre_archivo)
 
     if os.path.exists(ruta_completa):
         print(f"¡Advertencia: El archivo {nombre_archivo} ya existe!")
@@ -92,7 +97,7 @@ def crear_bitacora(nombre: str | None = None, plantilla: str | None = None):
 
 
     with open(ruta_completa, 'w') as f:
-        f.write(template.format(fecha_actual=fecha_actual))
+        f.write(template.format(fecha=fecha_actual))
 
     print(f"Bitácora creada exitosamente: {ruta_completa}")
 
@@ -120,8 +125,10 @@ def listar_bitacoras():
     """Lista todas las bitácoras existentes en el directorio."""
     verificar_directorio()
 
+    bitacoras_dir = cargar_configuracion()['log_directory']
+
     print("\nBitácoras disponibles:")
-    bitacoras = [f for f in os.listdir(BITACORAS_DIR) if f.startswith('bitacora_') and f.endswith('.md')]
+    bitacoras = [f for f in os.listdir(bitacoras_dir) if f.startswith('bitacora_') and f.endswith('.md')]
 
     if not bitacoras:
         print("No hay bitácoras existentes.")
@@ -133,6 +140,8 @@ def listar_bitacoras():
 def main():
     plantillas = cargar_plantillas()
 
+    bitacoras_dir = cargar_configuracion()['log_directory']
+
     parser = argparse.ArgumentParser(
         description='Gestor de Bitácoras - Sistema para crear y administrar registros de actividades diarias',
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -142,7 +151,7 @@ def main():
         %(prog)s listar                     Muestra todas las bitácoras disponibles
         %(prog)s plantillas                 Muestra todas las plantillas disponibles
 
-        Las bitácoras se guardan en: {}/""".format(BITACORAS_DIR)
+        Las bitácoras se guardan en: {}/""".format(bitacoras_dir)
     )
 
     subparsers = parser.add_subparsers(
@@ -202,6 +211,11 @@ def main():
         type=str,
         nargs="?"
     )
+    subparsers.add_parser(
+        'cargar',
+        help='Carga la configuracion',
+        description='Carga la configuracion del sistema'
+    )
 
     args = parser.parse_args()
 
@@ -211,6 +225,8 @@ def main():
         listar_bitacoras()
     elif args.comando == 'plantillas':
         listar_plantillas(args.show_details)
+    elif args.comando == 'cargar':
+        print("pass")
     elif args.comando is None:
         parser.print_help()
     else:
