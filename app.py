@@ -81,11 +81,16 @@ def crear_bitacora(nombre: str | None = None, plantilla: str | None = None):
 
     print(f"Bitácora creada exitosamente: {ruta_completa}")
 
-def listar_plantillas(valor: str | None = None):
+def listar_plantillas(show_details: str | None = None):
     """Muestra las plantillas disponibles"""
     plantillas = cargar_plantillas()
-    if valor:
-        print("Parámetro 'valor' no implementado en esta versión.")
+
+    if show_details:
+        ruta_c = os.path.join(CONFIG_DIR, show_details)
+        ruta_c = ruta_c + ".md"
+        with open(ruta_c, 'r') as f:
+            print(f.read())
+
         return
 
     print("Plantillas disponibles".center(50, '-'))
@@ -169,9 +174,12 @@ def main():
         description='Muestra las plantillas de bitácoras que se pueden usar al crear nuevas bitácoras'
     )
     plantillas_parser.add_argument(
-        '-n', '--nombre',
-        action='store_true',
-        help='Muestra detalles adicionales de las plantillas'
+        '-s', '--show-details',
+        help='Muestra detalles adicionales de las plantillas',
+        choices=list(plantillas.keys()),
+        default=None,
+        type=str,
+        nargs="?"
     )
 
     args = parser.parse_args()
@@ -182,7 +190,7 @@ def main():
     elif args.comando == 'listar':
         listar_bitacoras()
     elif args.comando == 'plantillas':
-        listar_plantillas(args.nombre)
+        listar_plantillas(args.show_details)
     elif args.comando is None:
         parser.print_help()
     else:
