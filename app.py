@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+from pathlib import Path
 import argparse
 from datetime import datetime
 import getpass
@@ -141,6 +142,33 @@ def listar_bitacoras():
     for i, bitacora in enumerate(sorted(bitacoras), 1):
         print(f"{i}. {bitacora}")
 
+def modificar_configuracion(path: str | None = None):
+    """Modifica la configuración del sistema."""
+    configuracion = cargar_configuracion()
+    if path:
+        if path == "this":
+            print()
+            # Directorio desde donde se ejecutó el comando
+            ruta_ejecucion = Path.cwd()
+            print(f"Directorio de trabajo actual: {ruta_ejecucion}")
+            path = str(ruta_ejecucion)
+
+        with open(CONFIG_FILE_PATH, 'r', encoding='utf-8') as f:
+            datos = json.load(f)
+
+        datos['configuration']['paths']['log_directory'] = path
+
+        with open(CONFIG_FILE_PATH, 'w', encoding='utf-8') as f:
+            json.dump(datos, f, indent=4, ensure_ascii=False)
+
+        return
+
+    # Mostrar la configuración actual
+    print("Configuración actual:".center(50, '-'))
+    print()
+    for key, value in configuracion.items():
+        print(f"{key}: {value}")
+
 def main():
     plantillas = cargar_plantillas()
 
@@ -215,10 +243,28 @@ def main():
         type=str,
         nargs="?"
     )
+
+    # Comando fuera de uso
     subparsers.add_parser(
         'cargar',
         help='Carga la configuracion',
         description='Carga la configuracion del sistema'
+    )
+
+    # Comando para manejar la configuración
+    config_parser = subparsers.add_parser(
+        'config',
+        help='Muestra la configuración actual del sistema',
+        description='Muestra la configuración actual del sistema'
+    )
+    config_parser.add_argument(
+        '-p', '--path',
+        help='Cambia el directorio en la configuración',
+        choices=['this'] + [str],
+        metavar='DIRECTORIO',
+        type=str,
+        default='this',
+        nargs='?'
     )
 
     args = parser.parse_args()
@@ -231,6 +277,8 @@ def main():
         listar_plantillas(args.show_details)
     elif args.comando == 'cargar':
         print("pass")
+    elif args.comando == 'config':
+        modificar_configuracion(args.path)
     elif args.comando is None:
         parser.print_help()
     else:
