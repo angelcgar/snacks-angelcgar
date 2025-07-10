@@ -7,11 +7,12 @@ import getpass
 import json
 from typing import Dict, Any
 
-CONFIGURATION_DIRECTORY = os.path.join(os.path.expanduser("~"), ".config", "bitacora_cli_config")
+HOME_USER = os.path.expanduser("~")
 SYSTEM_USER = getpass.getuser()
-USER_EXECUTABLE_PATH = os.path.join(os.path.expanduser("~"), ".local", "bin")
+CONFIGURATION_DIRECTORY = os.path.join(HOME_USER, ".config", "bitacora_cli_config")
+USER_EXECUTABLE_PATH = os.path.join(HOME_USER, ".local", "bin")
 CONFIG_FILE_PATH = os.path.join(CONFIGURATION_DIRECTORY,"bitacora_cli_config.json")
-LOG_DIRECTORY = os.path.join(os.path.expanduser("~"), "bitacoras_diarias")
+LOG_DIRECTORY = os.path.join(HOME_USER, "bitacoras_diarias")
 
 def load_config():
     print("Cargando configuración...")
@@ -80,5 +81,5 @@ def install_cli():
     print(f"\nInstalación completada {SYSTEM_USER}. Puedes usar el comando 'bitacora' desde cualquier lugar")
 
 if __name__ == "__main__":
-    # install_cli()
-    load_config()
+    install_cli()
+    # load_config()
