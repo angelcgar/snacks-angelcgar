@@ -4,11 +4,15 @@ import os
 import argparse
 from datetime import datetime
 import getpass
+import json
 
 # Configuración
-user = getpass.getuser()
-BITACORAS_DIR = os.path.join(os.path.expanduser("~"), "bitacoras_diarias")
-CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".config", "bitacora_cli_config")
+HOME_USER = os.path.expanduser("~")
+SYSTEM_USER = getpass.getuser()
+BITACORAS_DIR = os.path.join(HOME_USER, "bitacoras_diarias")
+CONFIGURATION_DIRECTORY = os.path.join(HOME_USER, ".config", "bitacora_cli_config")
+CONFIG_FILE_PATH = os.path.join(CONFIGURATION_DIRECTORY,"bitacora_cli_config.json")
+
 DEFAULT_TEMPLATE = """# Bitácora - {fecha}
 
 ## Objetivo
@@ -38,11 +42,11 @@ def cargar_plantillas() -> dict[str, str]:
         "default": DEFAULT_TEMPLATE
     }
 
-    if os.path.exists(CONFIG_DIR):
-        for file in os.listdir(CONFIG_DIR):
+    if os.path.exists(CONFIGURATION_DIRECTORY):
+        for file in os.listdir(CONFIGURATION_DIRECTORY):
             if file.endswith(".md"):
                 name = os.path.splitext(file)[0]
-                with open(os.path.join(CONFIG_DIR, file), 'r') as f:
+                with open(os.path.join(CONFIGURATION_DIRECTORY, file), 'r') as f:
                     plantillas[name] = f.read()
 
     return plantillas
@@ -86,7 +90,7 @@ def listar_plantillas(show_details: str | None = None):
     plantillas = cargar_plantillas()
 
     if show_details:
-        ruta_p = os.path.join(CONFIG_DIR, show_details)
+        ruta_p = os.path.join(CONFIGURATION_DIRECTORY, show_details)
         if not ruta_p.endswith('.md'):
             ruta_p += '.md'
 
