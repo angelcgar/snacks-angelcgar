@@ -4,12 +4,42 @@ import subprocess
 from pathlib import Path
 import shutil
 import getpass
+import json
+from typing import Dict, Any
+
+CONFIGURATION_DIRECTORY = os.path.join(os.path.expanduser("~"), ".config", "bitacora_cli_config")
+
+def load_config():
+    print("Cargando configuración...")
+    config_data: Dict[str, Any] = {
+        "name": "bitacora_cli",
+        "version": "1.0.0",
+        "configuration": {
+            "user": getpass.getuser(),
+            "paths": {
+                "log_directory": os.path.join(os.path.expanduser("~"), "bitacoras_diarias"),
+                "log_config_directory": CONFIGURATION_DIRECTORY,
+                "log_config_file": os.path.join(CONFIGURATION_DIRECTORY, "bitacora_cli_config.json"),
+            }
+        },
+    }
+
+    config_file_path = os.path.join(os.path.expanduser("~"), ".config", "bitacora_cli_config","bitacora_cli_config.json")
+
+    if os.path.exists(config_file_path):
+        print(f"El archivo de configuración ya existe: {config_file_path}")
+        print("Se eliminará y se volverá a guardar los datos.")
+        os.remove(config_file_path)
+
+    # Guardar datos en un archivo JSON
+    with open(config_file_path, "w", encoding='utf-8') as f:
+        json.dump(config_data, f, indent=4)
+    print("Datos guardados en datos.json")
 
 def install_cli():
     user = getpass.getuser()
 
     local_bin = os.path.join(os.path.expanduser("~"), ".local", "bin")
-    config_dir = os.path.join(os.path.expanduser("~"), ".config", "bitacora_cli_config")
 
     # Obtener la ruta del directorio actual
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -17,7 +47,7 @@ def install_cli():
 
     # Crear directorios si no existen
     Path(local_bin).mkdir(parents=True, exist_ok=True)
-    Path(config_dir).mkdir(parents=True, exist_ok=True)
+    Path(CONFIGURATION_DIRECTORY).mkdir(parents=True, exist_ok=True)
 
     # Clonar repositorio de plantillas
     # TODO: Cambiar la URL del repositorio a tu repositorio real
@@ -25,14 +55,14 @@ def install_cli():
     repo_url = "https://github.com/angelcgar/bitacoras_diarias_templates.git"
 
     try:
-        if os.path.exists(config_dir):
-            print(f"El directorio de configuración ya existe: {config_dir}")
+        if os.path.exists(CONFIGURATION_DIRECTORY):
+            print(f"El directorio de configuración ya existe: {CONFIGURATION_DIRECTORY}")
             print("Se eliminará y se volverá a clonar el repositorio.")
-            shutil.rmtree(config_dir)
+            shutil.rmtree(CONFIGURATION_DIRECTORY)
 
-        subprocess.run(["git", "clone", repo_url, config_dir], check=True)
+        subprocess.run(["git", "clone", repo_url, CONFIGURATION_DIRECTORY], check=True)
         # Eliminar .git
-        git_dir = os.path.join(config_dir, ".git")
+        git_dir = os.path.join(CONFIGURATION_DIRECTORY, ".git")
         if os.path.exists(git_dir):
             shutil.rmtree(git_dir)
         print("✓ Plantillas descargadas correctamente")
@@ -51,7 +81,10 @@ def install_cli():
         if not os.path.exists(cli_source):
             print(f"Error: No se encontró el archivo app.py en {current_dir}")
 
+    load_config()
+
     print(f"\nInstalación completada {user}. Puedes usar el comando 'bitacora' desde cualquier lugar")
 
 if __name__ == "__main__":
     install_cli()
+    # load_config()
