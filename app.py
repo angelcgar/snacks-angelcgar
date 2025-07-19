@@ -48,6 +48,7 @@ def cargar_configuracion() -> dict[str, str]:
         "user": datos['configuration']['user'],
         "name": datos['name'],
         "version": datos['version'],
+        "date_format": datos['configuration']['dates']['date_format'],
     }
 
 def cargar_plantillas() -> dict[str, str]:
@@ -81,6 +82,7 @@ def crear_bitacora(nombre: str | None = None, plantilla: str | None = None):
     verificar_directorio()
 
     bitacoras_dir = cargar_configuracion()['log_directory']
+    date_format = cargar_configuracion()['date_format']
 
     plantillas = cargar_plantillas()
     if plantilla is None:
@@ -88,7 +90,7 @@ def crear_bitacora(nombre: str | None = None, plantilla: str | None = None):
     else:
         template = plantillas.get(plantilla.lower(), DEFAULT_TEMPLATE)
 
-    fecha_actual = datetime.now().strftime("%Y-%m-%d")
+    fecha_actual = datetime.now().strftime(date_format)
     if nombre:
         nombre_archivo = f"{fecha_actual}_{nombre}.md"
     else:
