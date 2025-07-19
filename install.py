@@ -26,6 +26,11 @@ def load_config():
                 "log_config_directory": CONFIGURATION_DIRECTORY,
                 "log_config_file": CONFIG_FILE_PATH,
                 "user_executable_path": USER_EXECUTABLE_PATH,
+            },
+            "dates": {
+                "date_format": "%Y-%m-%d",
+                "date_format_default": "%Y-%m-%d",
+                "datetime_format": "%Y-%m-%d %H:%M:%S",
             }
         },
     }
