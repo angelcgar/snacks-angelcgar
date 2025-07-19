@@ -176,7 +176,6 @@ def modificar_configuracion(path: str | None = None, date_format: str | None = N
     # Todo: Mejorar la validación del path
     if path:
         if path == "this":
-            print()
             # Directorio desde donde se ejecutó el comando
             ruta_ejecucion = Path.cwd()
             print(f"Directorio de trabajo actual: {ruta_ejecucion}")

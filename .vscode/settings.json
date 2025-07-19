@@ -3,7 +3,8 @@
     "bitacora",
     "bitacoras",
     "BITACORAS",
-    "configuracion"
+    "configuracion",
+    "ejecucion"
   ],
   "python.analysis.typeCheckingMode": "basic"
 }
