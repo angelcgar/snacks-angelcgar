@@ -90,9 +90,9 @@ def crear_bitacora(nombre: str | None = None, plantilla: str | None = None):
 
     fecha_actual = datetime.now().strftime("%Y-%m-%d")
     if nombre:
-        nombre_archivo = f"bitacora_{nombre}_{fecha_actual}.md"
+        nombre_archivo = f"{fecha_actual}_{nombre}.md"
     else:
-        nombre_archivo = f"bitacora_{fecha_actual}.md"
+        nombre_archivo = f"{fecha_actual}.md"
 
     ruta_completa = os.path.join(bitacoras_dir, nombre_archivo)
 
