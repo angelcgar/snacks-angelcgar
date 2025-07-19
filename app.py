@@ -68,6 +68,18 @@ def cargar_plantillas() -> dict[str, str]:
 
     return plantillas
 
+def formatos_fechas() -> dict[str, str]:
+    return {
+        "default": "%Y-%m-%d",
+        "iso": "%Y-%m-%d",             # 2025-07-19
+        "latino": "%d-%m-%Y",          # 19-07-2025
+        "mx": "%d-%m-%Y",
+        "us": "%m-%d-%Y",              # 07-19-2025
+        "completo": "%A, %d de %B de %Y", # sábado, 19 de julio de 2025
+        "compacto": "%Y%m%d",          # 20250719
+        "hora_fecha": "%Y-%m-%d %H:%M",# 2025-07-19 14:30
+    }
+
 def verificar_directorio():
     """Verifica si el directorio de bitácoras existe, si no, lo crea."""
 
@@ -144,9 +156,24 @@ def listar_bitacoras():
     for i, bitacora in enumerate(sorted(bitacoras), 1):
         print(f"{i}. {bitacora}")
 
-def modificar_configuracion(path: str | None = None):
+def modificar_configuracion(path: str | None = None, date_format: str | None = None):
     """Modifica la configuración del sistema."""
     configuracion = cargar_configuracion()
+
+    # Todo: Hacer validaciones robustas para date_format
+    if date_format:
+        print("Modificando el formato de fecha...")
+
+        with open(CONFIG_FILE_PATH, 'r', encoding='utf-8') as f:
+            datos = json.load(f)
+
+        datos['configuration']['dates']['date_format'] = formatos_fechas()[date_format]
+
+        with open(CONFIG_FILE_PATH, 'w', encoding='utf-8') as f:
+            json.dump(datos, f, indent=4, ensure_ascii=False)
+        return
+
+    # Todo: Mejorar la validación del path
     if path:
         if path == "this":
             print()
@@ -175,6 +202,8 @@ def main():
     plantillas = cargar_plantillas()
 
     bitacoras_dir = cargar_configuracion()['log_directory']
+
+    formatos_fecha = formatos_fechas()
 
     parser = argparse.ArgumentParser(
         description='Gestor de Bitácoras - Sistema para crear y administrar registros de actividades diarias',
@@ -268,6 +297,15 @@ def main():
         default='this',
         nargs='?'
     )
+    config_parser.add_argument(
+        '-d', '--date_format',
+        help='Cambia el formato de las fechas',
+        choices=list(formatos_fecha.keys()),
+        metavar='FORMATO_FECHA',
+        default=None,
+        type=str,
+        nargs='?'
+    )
 
     args = parser.parse_args()
 
@@ -280,7 +318,7 @@ def main():
     elif args.comando == 'cargar':
         print("pass")
     elif args.comando == 'config':
-        modificar_configuracion(args.path)
+        modificar_configuracion(args.path, args.date_format)
     elif args.comando is None:
         parser.print_help()
     else:
