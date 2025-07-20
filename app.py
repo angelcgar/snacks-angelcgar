@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
 
+import os
+import json
 import subprocess
 import argparse
 from pathlib import Path
 
+HOME_USER = os.path.expanduser("~")
+BIBLIOTECA_JSON = os.path.join(HOME_USER, ".config", "biblioteca_cli_config", "biblioteca_cli.json")
+CONFIG_FILE_PATH = os.path.join(HOME_USER, ".config", "biblioteca_cli_config", "biblioteca_cli_config.json")
+
 class Libro:
+    # Crear un id para cada libro
     def __init__(self, titulo: str, autor: str, genero: str, path_absoluto: str):
         self._titulo = titulo
         self._autor = autor
@@ -23,18 +30,77 @@ class Libro:
     def genero(self):
         return self._genero
 
+    def convertir_a_dict(self) -> dict[str, str]:
+        return {
+            "titulo": self.titulo,
+            "autor": self.autor,
+            "genero": self.genero,
+            "abspath": self._path_absoluto,
+        }
 
-def agregar_libro(libro: str | None = None):
+class Biblioteca:
+
+    def __init__(self, nombre: str):
+        self._nombre = nombre
+        self._libros: list[Libro] = []
+
+    def agregar_libro(self, libro: Libro):
+        self._libros.append(libro)
+
+    def buscar_libros_por_autor(self, autor):
+        for libro in self._libros:
+            if libro.autor.lower() == autor.lower():
+                self.mostrar_libro(libro)
+
+    def buscar_libros_por_genero(self, genero):
+        for libro in self._libros:
+            if libro.genero.lower() == genero.lower():
+                self.mostrar_libro(libro)
+
+    def mostrar_todos_los_libros(self):
+        print(f'\nTodos los libros de la biblioteca {self._nombre}')
+        for libro in self._libros:
+            self.mostrar_libro(libro)
+
+    def mostrar_libro(self, libro):
+        print(f'Libro -> Título: {libro.titulo}, Autor: {libro._autor}, '
+              f'Género: {libro.genero}')
+
+    # Lógica de la app
+    def cargar_libros(self) -> list[dict[str, str]]:
+        with open(BIBLIOTECA_JSON, "r", encoding='utf-8') as f:
+            return json.load(f)
+
+    def guardar_libros(self, libros: list[dict[str, str]]):
+        with open(BIBLIOTECA_JSON, "w", encoding='utf-8') as f:
+            json.dump(libros, f, indent=4, ensure_ascii=False)
+
+    def guardar_libro(self, libro: dict[str, str]):
+        libros = self.cargar_libros()
+        print(libros)
+        libros.append(libro)
+        self.guardar_libros(libros)
+
+
+    @property
+    def nombre(self):
+        return self._nombre
+
+    @property
+    def libros(self):
+        return self._libros
+
+def agregar_libro(libro: str | None = None, autor: str = "Joe Doe", genero: str = "Programming"):
 
     if libro:
-        tem_libro_nombre = libro.strip().lower().split(".")[-2]
-        current_path = str(Path.cwd())
-        path_libro = current_path + "/" + libro
+        biblioteca_inicial = Biblioteca("biblioteca_inicial")
 
-        current_libro = Libro(tem_libro_nombre, "", "", path_libro)
-        print("path_libro",path_libro)
-        # subprocess.run(["zathura", path_libro])
-        print(tem_libro_nombre)
+        normalized_book_name = libro.strip().lower().split(".")[-2]
+        current_path = str(Path.cwd())
+        path_libro = os.path.join(current_path, libro)
+
+        current_libro = Libro(normalized_book_name, autor, genero, path_libro)
+        biblioteca_inicial.guardar_libro(current_libro.convertir_a_dict())
 
 def main():
     parser = argparse.ArgumentParser(
