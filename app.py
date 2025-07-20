@@ -44,7 +44,7 @@ class Biblioteca:
         self._nombre = nombre
         self._libros: list[dict[str, str]] = self.cargar_libros()
 
-    def agregar_libro(self, libro: Libro):
+    def agregar_libro(self, libro: dict[str, str]):
         self._libros.append(libro)
 
     # def buscar_libros_por_autor(self, autor):
@@ -60,13 +60,14 @@ class Biblioteca:
 
 
     def mostrar_todos_los_libros(self):
-        print(f'\nTodos los libros de la biblioteca {self._nombre}')
+        print(f'Todos los libros de la biblioteca {self._nombre}'.center(70, "="))
+        # Bug: Hay un None en la lista de libros
         for libro in self._libros:
-            self.mostrar_libro(libro)
+            self.mostrar_libros(libro)
 
-    def mostrar_libro(self, libro):
-        print(f'Libro -> Título: {libro.titulo}, Autor: {libro._autor}, '
-              f'Género: {libro.genero}')
+    def mostrar_libros(self, libro: dict[str, str]):
+        print(f'Libro -> Título: {libro["titulo"]}, Autor: {libro["autor"]}, '
+              f'Género: {libro["genero"]}')
 
     # Lógica de la app
     def cargar_libros(self) -> list[dict[str, str]]:
