@@ -57,7 +57,10 @@ class Biblioteca:
     #         if libro.genero.lower() == genero.lower():
     #             self.mostrar_libro(libro)
 
-
+    def buscar_libros_por_titulo(self, titulo) -> str | None:
+        for libro in self._libros:
+            if libro["titulo"].lower() == titulo.lower():
+                return libro["abspath"]
 
     def mostrar_todos_los_libros(self):
         print(f'Todos los libros de la biblioteca {self._nombre}'.center(70, "="))
@@ -93,17 +96,26 @@ class Biblioteca:
     def libros(self):
         return self._libros
 
+BIBLIOTECA_PRINCIPAL = Biblioteca("biblioteca_inicial")
+
 def agregar_libro(libro: str | None = None, autor: str = "Joe Doe", genero: str = "Programming"):
 
     if libro:
-        biblioteca_inicial = Biblioteca("biblioteca_inicial")
-
-        normalized_book_name = libro.strip().lower().split(".")[-2]
+        normalized_book_name = libro.strip().lower().split(".")[-2].replace(" ", "_")
         current_path = str(Path.cwd())
         path_libro = os.path.join(current_path, libro)
 
         current_libro = Libro(normalized_book_name, autor, genero, path_libro)
-        biblioteca_inicial.guardar_libro(current_libro.convertir_a_dict())
+        BIBLIOTECA_PRINCIPAL.guardar_libro(current_libro.convertir_a_dict())
+
+def abrir_libro(libro: str):
+    if libro:
+        current_libro = BIBLIOTECA_PRINCIPAL.buscar_libros_por_titulo(libro)
+        if not current_libro:
+            print(f"No se encontro el libro: {libro}")
+
+        subprocess.run(["zathura", current_libro], check=True) # type: ignore
+
 
 def main():
     parser = argparse.ArgumentParser(
