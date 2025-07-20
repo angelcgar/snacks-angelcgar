@@ -147,12 +147,34 @@ def main():
         nargs='?'  # Permite que el argumento sea opcional
     )
 
+    # Comando para mostrar la versión
+    version_parser = subparsers.add_parser(
+        "version",
+        help='Muestra la versión del CLI',
+        description='Muestra la versión actual del CLI'
+    )
+
+    # Comando para abrir un libro
+    leer_parser = subparsers.add_parser(
+        "leer",
+        help='Abre un libro con el lector predeterminado',
+        description='Abre un libro con el lector predeterminado'
+    )
+    leer_parser.add_argument(
+        'libro',
+        help='Nombre del libro a abrir (debe estar en la biblioteca)',
+        metavar='LIBRO',
+        type=str
+    )
+
     args = parser.parse_args()
 
     if args.comando == "agregar":
         agregar_libro(args.nombre)
+    elif args.comando == "leer":
+        abrir_libro(args.libro)
     elif args.comando == "version":
-        print("0.0.1")
+        print("0.0.2")
     elif args.comando is None:
         parser.print_help()
     else:
