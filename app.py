@@ -42,7 +42,7 @@ class Biblioteca:
 
     def __init__(self, nombre: str):
         self._nombre = nombre
-        self._libros: list[Libro] = []
+        self._libros: list[dict[str, str]] = self.cargar_libros()
 
     def agregar_libro(self, libro: Libro):
         self._libros.append(libro)
