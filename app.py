@@ -87,7 +87,6 @@ class Biblioteca:
         libros.append(libro)
         self.guardar_libros(libros)
 
-
     @property
     def nombre(self):
         return self._nombre
@@ -116,6 +115,10 @@ def abrir_libro(libro: str):
 
         subprocess.run(["zathura", current_libro], check=True) # type: ignore
 
+def listar_libros():
+    BIBLIOTECA_PRINCIPAL.mostrar_todos_los_libros()
+    if not BIBLIOTECA_PRINCIPAL.libros:
+        print("No hay libros en la biblioteca.")
 
 def main():
     parser = argparse.ArgumentParser(
@@ -167,12 +170,22 @@ def main():
         type=str
     )
 
+    # Comando para listar todos los libros
+    # todo: añadir un filtro por autor o género
+    listar_parser = subparsers.add_parser(
+        "listar",
+        help='Lista todos los libros en la biblioteca',
+        description='Lista todos los libros en la biblioteca'
+    )
+
     args = parser.parse_args()
 
     if args.comando == "agregar":
         agregar_libro(args.nombre)
     elif args.comando == "leer":
         abrir_libro(args.libro)
+    elif args.comando == "listar":
+        listar_libros()
     elif args.comando == "version":
         print("0.0.2")
     elif args.comando is None:
