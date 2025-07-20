@@ -57,7 +57,7 @@ class Biblioteca:
     #         if libro.genero.lower() == genero.lower():
     #             self.mostrar_libro(libro)
 
-    def buscar_libros_por_titulo(self, titulo) -> str | None:
+    def buscar_libros_por_titulo(self, titulo: str) -> str | None:
         for libro in self._libros:
             if libro["titulo"].lower() == titulo.lower():
                 return libro["abspath"]
@@ -111,7 +111,7 @@ def abrir_libro(libro: str):
     if libro:
         current_libro = BIBLIOTECA_PRINCIPAL.buscar_libros_por_titulo(libro)
         if not current_libro:
-            print(f"No se encontro el libro: {libro}")
+            print(f"No se encontró el libro: {libro}")
 
         subprocess.run(["zathura", current_libro], check=True) # type: ignore
 
@@ -119,6 +119,19 @@ def listar_libros():
     BIBLIOTECA_PRINCIPAL.mostrar_todos_los_libros()
     if not BIBLIOTECA_PRINCIPAL.libros:
         print("No hay libros en la biblioteca.")
+
+def eliminar_libro(libro: str):
+    if libro:
+        current_libro = BIBLIOTECA_PRINCIPAL.buscar_libros_por_titulo(libro)
+        if not current_libro:
+            print(f"No se encontró el libro: {libro}")
+            return
+
+        # Eliminar el libro del archivo JSON
+        libros = BIBLIOTECA_PRINCIPAL.cargar_libros()
+        libros = [l for l in libros if l["titulo"].lower() != libro.lower()]
+        BIBLIOTECA_PRINCIPAL.guardar_libros(libros)
+        print(f"Libro '{libro}' eliminado de la biblioteca.")
 
 def main():
     parser = argparse.ArgumentParser(
@@ -178,6 +191,19 @@ def main():
         description='Lista todos los libros en la biblioteca'
     )
 
+    # Comando para eliminar un libro
+    eliminar_parser = subparsers.add_parser(
+        "eliminar",
+        help='Elimina un libro de la biblioteca',
+        description='Elimina un libro de la biblioteca'
+    )
+    eliminar_parser.add_argument(
+        'libro',
+        help='Nombre del libro a eliminar (debe estar en la biblioteca)',
+        metavar='LIBRO',
+        type=str
+    )
+
     args = parser.parse_args()
 
     if args.comando == "agregar":
@@ -186,6 +212,8 @@ def main():
         abrir_libro(args.libro)
     elif args.comando == "listar":
         listar_libros()
+    elif args.comando == "eliminar":
+        eliminar_libro(args.libro)
     elif args.comando == "version":
         print("0.0.2")
     elif args.comando is None:
