@@ -12,10 +12,11 @@ CONFIG_FILE_PATH = os.path.join(HOME_USER, ".config", "biblioteca_cli_config", "
 
 class Libro:
     # Crear un id para cada libro
-    def __init__(self, titulo: str, autor: str, genero: str, path_absoluto: str):
+    def __init__(self, titulo: str, autor: str, genero: str, anio_publicacion: str, path_absoluto: str):
         self._titulo = titulo
         self._autor = autor
         self._genero = genero
+        self.anio_publicacion = anio_publicacion
         self._path_absoluto = path_absoluto
 
     @property
@@ -35,6 +36,7 @@ class Libro:
             "titulo": self.titulo,
             "autor": self.autor,
             "genero": self.genero,
+            "anio_publicacion": self.anio_publicacion,
             "abspath": self._path_absoluto,
         }
 
@@ -83,7 +85,7 @@ class Biblioteca:
 
     def guardar_libro(self, libro: dict[str, str]):
         libros = self.cargar_libros()
-        print(libros)
+        # print(libros)
         libros.append(libro)
         self.guardar_libros(libros)
 
@@ -97,14 +99,23 @@ class Biblioteca:
 
 BIBLIOTECA_PRINCIPAL = Biblioteca("biblioteca_inicial")
 
-def agregar_libro(libro: str | None = None, autor: str = "Joe Doe", genero: str = "Programming"):
+def agregar_libro(libro: str | None = None, autor: str | None = None, genero: str | None = None, anio_publicacion: str | None = None):
+    """ Agrega un libro a la biblioteca."""
+    if anio_publicacion is None:
+        anio_publicacion = "2023"
+
+    if genero is None:
+        genero = "Programming"
+
+    if autor is None:
+        autor = "Joe Doe"
 
     if libro:
-        normalized_book_name = libro.strip().lower().split(".")[-2].replace(" ", "_")
+        normalized_book_name = libro.strip().lower()[:-4].replace(" ", "_")
         current_path = str(Path.cwd())
         path_libro = os.path.join(current_path, libro)
 
-        current_libro = Libro(normalized_book_name, autor, genero, path_libro)
+        current_libro = Libro(titulo=normalized_book_name, autor=autor, genero=genero, anio_publicacion=anio_publicacion, path_absoluto=path_libro)
         BIBLIOTECA_PRINCIPAL.guardar_libro(current_libro.convertir_a_dict())
 
 def abrir_libro(libro: str):
@@ -156,11 +167,35 @@ def main():
     )
     agregar_parser.add_argument(
         '-n', '--nombre',
-        help='Identificador opcional para la bitácora (ej: nombre_proyecto)',
+        help='Identificador para cada libro (ej: nombre_del_libro.pdf)',
         metavar='NOMBRE',
         default=None,
         type=str,
         nargs='?'  # Permite que el argumento sea opcional
+    )
+    agregar_parser.add_argument(
+        '-a', '--autor',
+        help='Autor del libro (por defecto: Joe Doe)',
+        metavar='AUTOR',
+        default=None,
+        nargs='?',
+        type=str
+    )
+    agregar_parser.add_argument(
+        '-g', '--genero',
+        help='Género del libro (por defecto: Programming)',
+        metavar='GENERO',
+        default=None,
+        nargs='?',
+        type=str
+    )
+    agregar_parser.add_argument(
+        '-y', '--anio_publicacion',
+        help='Año de publicación del libro (por defecto: 2023)',
+        metavar='AÑO_PUBLICACION',
+        default=None,
+        nargs='?',
+        type=str
     )
 
     # Comando para mostrar la versión
@@ -207,7 +242,7 @@ def main():
     args = parser.parse_args()
 
     if args.comando == "agregar":
-        agregar_libro(args.nombre)
+        agregar_libro(args.nombre, args.autor, args.genero, args.anio_publicacion)
     elif args.comando == "leer":
         abrir_libro(args.libro)
     elif args.comando == "listar":
