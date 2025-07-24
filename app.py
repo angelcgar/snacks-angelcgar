@@ -87,6 +87,12 @@ class Biblioteca:
         for libro in self._libros:
             self.mostrar_libros(libro)
 
+    def mostrar_todos_los_libros_disponibles(self):
+        print(f'Libros disponibles en la biblioteca {self._nombre}'.center(70, "="))
+        for libro in self._libros:
+            if libro.get("estado") == "disponible":
+                self.mostrar_libros(libro)
+
     def mostrar_libros(self, libro: dict[str, str]):
         print(f'Libro -> Título: {libro["titulo"]}, Autor: {libro["autor"]}, '
               f'Género: {libro["genero"]}')
@@ -150,9 +156,10 @@ def abrir_libro(libro: str):
         subprocess.run(["zathura", current_libro], check=True) # type: ignore
 
 def listar_libros():
-    BIBLIOTECA_PRINCIPAL.mostrar_todos_los_libros()
     if not BIBLIOTECA_PRINCIPAL.libros:
         print("No hay libros en la biblioteca.")
+
+    BIBLIOTECA_PRINCIPAL.mostrar_todos_los_libros_disponibles()
 
 def eliminar_libro(libro: str):
     if libro:
