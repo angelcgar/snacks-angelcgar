@@ -153,7 +153,7 @@ def abrir_libro(libro: str):
         if not current_libro:
             print(f"No se encontró el libro: {libro}")
 
-        subprocess.run(["zathura", current_libro], check=True) # type: ignore
+        subprocess.run(["zathura", str(current_libro)], check=True)
 
 def listar_libros():
     if not BIBLIOTECA_PRINCIPAL.libros:
