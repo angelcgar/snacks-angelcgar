@@ -164,11 +164,40 @@ def abrir_libro(libro: str):
 
         subprocess.run(["zathura", str(current_libro)], check=True)
 
-def listar_libros():
-    if not BIBLIOTECA_PRINCIPAL.libros:
+def listar_libros(autor: str | None = None, genero: str | None = None, estado: str | None = None):
+    """
+    Lista los libros de la biblioteca.
+    - Por defecto, lista todos los libros disponibles.
+    - Permite filtrar por autor, género o estado.
+    """
+    libros = BIBLIOTECA_PRINCIPAL.cargar_libros()
+    if not libros:
         print("No hay libros en la biblioteca.")
+        return
 
-    BIBLIOTECA_PRINCIPAL.mostrar_todos_los_libros_disponibles()
+    # Comportamiento por defecto: listar libros disponibles si no hay filtros
+    if autor is None and genero is None and estado is None:
+        BIBLIOTECA_PRINCIPAL.mostrar_todos_los_libros_disponibles()
+        return
+
+    # Aplicar filtros si se proporcionan
+    libros_a_mostrar = libros
+
+    if autor:
+        libros_a_mostrar = [libro for libro in libros_a_mostrar if libro.get("autor", "").lower() == autor.lower()]
+
+    if genero:
+        libros_a_mostrar = [libro for libro in libros_a_mostrar if libro.get("genero", "").lower() == genero.lower()]
+
+    if estado:
+        libros_a_mostrar = [libro for libro in libros_a_mostrar if libro.get("estado", "").lower() == estado.lower()]
+
+    if not libros_a_mostrar:
+        print("No se encontraron libros con los criterios especificados.")
+    else:
+        print(f"Resultados de la búsqueda".center(70, "="))
+        for libro in libros_a_mostrar:
+            BIBLIOTECA_PRINCIPAL.mostrar_libros(libro)
 
 def eliminar_libro(libro: str):
     if libro:
@@ -310,11 +339,31 @@ def main():
     )
 
     # Comando para listar todos los libros
-    # todo: añadir un filtro por autor o género
     listar_parser = subparsers.add_parser(
         "listar",
-        help='Lista todos los libros en la biblioteca',
-        description='Lista todos los libros en la biblioteca'
+        help='Lista todos los libros en la biblioteca, con filtros opcionales.',
+        description='Lista todos los libros. Por defecto, muestra los disponibles. Permite filtrar por autor, género o estado.'
+    )
+    listar_parser.add_argument(
+        '-a', '--autor',
+        help='Filtra los libros por autor',
+        metavar='AUTOR',
+        default=None,
+        type=str
+    )
+    listar_parser.add_argument(
+        '-g', '--genero',
+        help='Filtra los libros por género',
+        metavar='GENERO',
+        default=None,
+        type=str
+    )
+    listar_parser.add_argument(
+        '-e', '--estado',
+        help='Filtra los libros por estado (ej: disponible, prestado)',
+        metavar='ESTADO',
+        default=None,
+        type=str
     )
 
     # Comando para eliminar un libro
@@ -378,7 +427,7 @@ def main():
     elif args.comando == "leer":
         abrir_libro(args.libro)
     elif args.comando == "listar":
-        listar_libros()
+        listar_libros(args.autor, args.genero, args.estado)
     elif args.comando == "eliminar":
         eliminar_libro(args.libro)
     elif args.comando == "modificar":
