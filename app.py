@@ -12,7 +12,7 @@ CONFIG_FILE_PATH = os.path.join(HOME_USER, ".config", "biblioteca_cli_config", "
 
 class Libro:
     # Crear un id para cada libro
-    def __init__(self, titulo: str, autor: str, genero: str, anio_publicacion: str, path_absoluto: str, idioma: str, estado: str):
+    def __init__(self, titulo: str, autor: str, genero: str, anio_publicacion: str, path_absoluto: str, idioma: str, estado: str, descripcion: str):
         self._titulo = titulo
         self._autor = autor
         self._genero = genero
@@ -20,6 +20,7 @@ class Libro:
         self._path_absoluto = path_absoluto
         self._idioma = idioma
         self._estado = estado
+        self._descripcion = descripcion
 
     @property
     def titulo(self):
@@ -45,6 +46,10 @@ class Libro:
     def estado(self):
         return self._estado
 
+    @property
+    def descripcion(self):
+        return self._descripcion
+
 
     def convertir_a_dict(self) -> dict[str, str]:
         return {
@@ -55,6 +60,7 @@ class Libro:
             "idioma": self.idioma,
             "estado": self.estado,
             "abspath": self._path_absoluto,
+            "descripcion": self.descripcion,
         }
 
 class Biblioteca:
@@ -122,7 +128,7 @@ class Biblioteca:
 
 BIBLIOTECA_PRINCIPAL = Biblioteca("biblioteca_inicial")
 
-def agregar_libro(libro: str | None = None, autor: str | None = None, genero: str | None = None, anio_publicacion: str | None = None, idioma: str | None = None, estado: str | None = None):
+def agregar_libro(libro: str | None = None, autor: str | None = None, genero: str | None = None, anio_publicacion: str | None = None, idioma: str | None = None, estado: str | None = None, descripcion: str | None = None):
     """ Agrega un libro a la biblioteca."""
     if anio_publicacion is None:
         anio_publicacion = "2023"
@@ -139,12 +145,15 @@ def agregar_libro(libro: str | None = None, autor: str | None = None, genero: st
     if estado is None:
         estado = "disponible"
 
+    if descripcion is None:
+        descripcion = "Libro sin descripción"
+
     if libro:
         normalized_book_name = libro.strip().lower()[:-4].replace(" ", "_")
         current_path = str(Path.cwd())
         path_libro = os.path.join(current_path, libro)
 
-        current_libro = Libro(titulo=normalized_book_name, autor=autor, genero=genero, anio_publicacion=anio_publicacion, path_absoluto=path_libro, idioma=idioma, estado=estado)
+        current_libro = Libro(titulo=normalized_book_name, autor=autor, genero=genero, anio_publicacion=anio_publicacion, path_absoluto=path_libro, idioma=idioma, estado=estado, descripcion=descripcion)
         BIBLIOTECA_PRINCIPAL.guardar_libro(current_libro.convertir_a_dict())
 
 def abrir_libro(libro: str):
@@ -173,6 +182,42 @@ def eliminar_libro(libro: str):
         libros = [l for l in libros if l["titulo"].lower() != libro.lower()]
         BIBLIOTECA_PRINCIPAL.guardar_libros(libros)
         print(f"Libro '{libro}' eliminado de la biblioteca.")
+
+def modificar_libro(titulo_actual: str, nuevo_titulo: str | None = None, nuevo_autor: str | None = None, nuevo_anio: str | None = None, nueva_descripcion: str | None = None):
+    """ Modifica los atributos de un libro existente. """
+    libros = BIBLIOTECA_PRINCIPAL.cargar_libros()
+    libro_encontrado = None
+    libro_modificado = False
+
+    for libro in libros:
+        if libro["titulo"].lower() == titulo_actual.lower():
+            libro_encontrado = libro
+            print(f"Libro encontrado: '{libro['titulo']}'. Modificando atributos...")
+            if nuevo_titulo:
+                libro["titulo"] = nuevo_titulo
+                libro_modificado = True
+            if nuevo_autor:
+                libro["autor"] = nuevo_autor
+                libro_modificado = True
+            if nuevo_anio:
+                libro["anio_publicacion"] = nuevo_anio
+                libro_modificado = True
+            if nueva_descripcion:
+                libro["descripcion"] = nueva_descripcion
+                libro_modificado = True
+            break
+
+    if not libro_encontrado:
+        print(f"Error: No se encontró el libro con el título '{titulo_actual}'.")
+        return
+
+    if libro_modificado:
+        BIBLIOTECA_PRINCIPAL.guardar_libros(libros)
+        print(f"El libro '{titulo_actual}' ha sido modificado exitosamente.")
+    else:
+        print("No se especificó ningún atributo para modificar.")
+
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -285,6 +330,47 @@ def main():
         type=str
     )
 
+     # Comando para modificar un libro existente
+    modificar_parser = subparsers.add_parser(
+        "modificar",
+        help='Modifica un libro existente en la biblioteca',
+        description='Modifica los atributos de un libro existente'
+    )
+    modificar_parser.add_argument(
+        'titulo',
+        help='Título actual del libro a modificar',
+        metavar='TITULO_ACTUAL',
+        type=str
+    )
+    modificar_parser.add_argument(
+        '-n', '--nombre',
+        help='Nuevo título para el libro',
+        metavar='NUEVO_NOMBRE',
+        default=None,
+        type=str
+    )
+    modificar_parser.add_argument(
+        '-a', '--autor',
+        help='Nuevo autor del libro',
+        metavar='NUEVO_AUTOR',
+        default=None,
+        type=str
+    )
+    modificar_parser.add_argument(
+        '-y', '--anio_publicacion',
+        help='Nuevo año de publicación del libro',
+        metavar='NUEVO_AÑO',
+        default=None,
+        type=str
+    )
+    modificar_parser.add_argument(
+        '--descripcion',
+        help='Nueva descripción para el libro',
+        metavar='DESCRIPCION',
+        default=None,
+        type=str
+    )
+
     args = parser.parse_args()
 
     if args.comando == "agregar":
@@ -295,6 +381,8 @@ def main():
         listar_libros()
     elif args.comando == "eliminar":
         eliminar_libro(args.libro)
+    elif args.comando == "modificar":
+        modificar_libro(args.titulo, args.nombre, args.autor, args.anio_publicacion, args.descripcion)
     elif args.comando == "version":
         print("0.0.2")
     elif args.comando is None:
