@@ -126,6 +126,14 @@ class Biblioteca:
     def libros(self):
         return self._libros
 
+def cargar_configuracion() -> dict[str, str]:
+    with open(CONFIG_FILE_PATH, "r", encoding='utf-8') as archivo:
+        datos = json.load(archivo)
+
+    return {
+        "version": datos['version'],
+    }
+
 BIBLIOTECA_PRINCIPAL = Biblioteca("biblioteca_inicial")
 
 def agregar_libro(libro: str | None = None, autor: str | None = None, genero: str | None = None, anio_publicacion: str | None = None, idioma: str | None = None, estado: str | None = None, descripcion: str | None = None):
