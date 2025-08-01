@@ -254,7 +254,10 @@ def modificar_libro(titulo_actual: str, nuevo_titulo: str | None = None, nuevo_a
     else:
         print("No se especificó ningún atributo para modificar.")
 
-
+def mostrar_version():
+    """ Muestra la versión del CLI. """
+    version_actual = cargar_configuracion()['version']
+    print(f"Versión del CLI: {version_actual}")
 
 def main():
     parser = argparse.ArgumentParser(
@@ -441,7 +444,7 @@ def main():
     elif args.comando == "modificar":
         modificar_libro(args.titulo, args.nombre, args.autor, args.anio_publicacion, args.descripcion)
     elif args.comando == "version":
-        print("0.0.2")
+        mostrar_version()
     elif args.comando is None:
         parser.print_help()
     else:
