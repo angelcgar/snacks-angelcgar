@@ -137,7 +137,7 @@ def cargar_configuracion() -> dict[str, str]:
 
 BIBLIOTECA_PRINCIPAL = Biblioteca("biblioteca_inicial")
 
-def agregar_libro(libro: str | None = None, autor: str | None = None, genero: str | None = None, anio_publicacion: str | None = None, idioma: str | None = None, estado: str | None = None, descripcion: str | None = None, lo_leo_por: str | None = None):
+def agregar_libro(file: str | None = None, autor: str | None = None, genero: str | None = None, anio_publicacion: str | None = None, idioma: str | None = None, estado: str | None = None, descripcion: str | None = None, lo_leo_por: str | None = None):
     """ Agrega un libro a la biblioteca."""
     if anio_publicacion is None:
         anio_publicacion = "2023"
@@ -160,10 +160,10 @@ def agregar_libro(libro: str | None = None, autor: str | None = None, genero: st
     if lo_leo_por is None:
         lo_leo_por = "Interés personal"
 
-    if libro:
-        normalized_book_name = libro.strip().lower()[:-4].replace(" ", "_")
+    if file:
+        normalized_book_name = file.strip().lower()[:-4].replace(" ", "_")
         current_path = str(Path.cwd())
-        path_libro = os.path.join(current_path, libro)
+        path_libro = os.path.join(current_path, file)
 
         current_libro = Libro(titulo=normalized_book_name, autor=autor, genero=genero, anio_publicacion=anio_publicacion, path_absoluto=path_libro, idioma=idioma, estado=estado, descripcion=descripcion, lo_leo_por=lo_leo_por)
         BIBLIOTECA_PRINCIPAL.guardar_libro(current_libro.convertir_a_dict())
@@ -288,7 +288,7 @@ def main():
         description='Agrega un nuevo libro a tu biblioteca'
     )
     agregar_parser.add_argument(
-        '-n', '--nombre',
+        '-f', '--file',
         help='Identificador para cada libro (ej: nombre_del_libro.pdf)',
         metavar='NOMBRE',
         default=None,
@@ -456,7 +456,7 @@ def main():
     args = parser.parse_args()
 
     if args.comando == "agregar":
-        agregar_libro(args.nombre, args.autor, args.genero, args.anio_publicacion, args.idioma, args.estado, args.lo_leo_por)
+        agregar_libro(args.file, args.autor, args.genero, args.anio_publicacion, args.idioma, args.estado, args.lo_leo_por)
     elif args.comando == "leer":
         abrir_libro(args.libro)
     elif args.comando == "listar":
