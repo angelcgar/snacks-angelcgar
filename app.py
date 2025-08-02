@@ -12,7 +12,7 @@ CONFIG_FILE_PATH = os.path.join(HOME_USER, ".config", "biblioteca_cli_config", "
 
 class Libro:
     # Crear un id para cada libro
-    def __init__(self, titulo: str, autor: str, genero: str, anio_publicacion: str, path_absoluto: str, idioma: str, estado: str, descripcion: str):
+    def __init__(self, titulo: str, autor: str, genero: str, anio_publicacion: str, path_absoluto: str, idioma: str, estado: str, descripcion: str, lo_leo_por: str):
         self._titulo = titulo
         self._autor = autor
         self._genero = genero
@@ -21,6 +21,7 @@ class Libro:
         self._idioma = idioma
         self._estado = estado
         self._descripcion = descripcion
+        self._lo_leo_por = lo_leo_por
 
     @property
     def titulo(self):
@@ -136,7 +137,7 @@ def cargar_configuracion() -> dict[str, str]:
 
 BIBLIOTECA_PRINCIPAL = Biblioteca("biblioteca_inicial")
 
-def agregar_libro(libro: str | None = None, autor: str | None = None, genero: str | None = None, anio_publicacion: str | None = None, idioma: str | None = None, estado: str | None = None, descripcion: str | None = None):
+def agregar_libro(libro: str | None = None, autor: str | None = None, genero: str | None = None, anio_publicacion: str | None = None, idioma: str | None = None, estado: str | None = None, descripcion: str | None = None, lo_leo_por: str | None = None):
     """ Agrega un libro a la biblioteca."""
     if anio_publicacion is None:
         anio_publicacion = "2023"
@@ -156,12 +157,15 @@ def agregar_libro(libro: str | None = None, autor: str | None = None, genero: st
     if descripcion is None:
         descripcion = "Libro sin descripción"
 
+    if lo_leo_por is None:
+        lo_leo_por = "Interés personal"
+
     if libro:
         normalized_book_name = libro.strip().lower()[:-4].replace(" ", "_")
         current_path = str(Path.cwd())
         path_libro = os.path.join(current_path, libro)
 
-        current_libro = Libro(titulo=normalized_book_name, autor=autor, genero=genero, anio_publicacion=anio_publicacion, path_absoluto=path_libro, idioma=idioma, estado=estado, descripcion=descripcion)
+        current_libro = Libro(titulo=normalized_book_name, autor=autor, genero=genero, anio_publicacion=anio_publicacion, path_absoluto=path_libro, idioma=idioma, estado=estado, descripcion=descripcion, lo_leo_por=lo_leo_por)
         BIBLIOTECA_PRINCIPAL.guardar_libro(current_libro.convertir_a_dict())
 
 def abrir_libro(libro: str):
@@ -331,6 +335,14 @@ def main():
         nargs='?',
         type=str
     )
+    agregar_parser.add_argument(
+        '--lo_leo_por',
+        help='Espacio para determinar el por que leo este libro',
+        metavar='LO_LEO_POR',
+        default=None,
+        nargs='?',
+        type=str
+    )
 
     # Comando para mostrar la versión
     version_parser = subparsers.add_parser(
@@ -444,7 +456,7 @@ def main():
     args = parser.parse_args()
 
     if args.comando == "agregar":
-        agregar_libro(args.nombre, args.autor, args.genero, args.anio_publicacion, args.idioma, args.estado)
+        agregar_libro(args.nombre, args.autor, args.genero, args.anio_publicacion, args.idioma, args.estado, args.lo_leo_por)
     elif args.comando == "leer":
         abrir_libro(args.libro)
     elif args.comando == "listar":
