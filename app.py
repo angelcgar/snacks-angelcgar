@@ -220,7 +220,7 @@ def eliminar_libro(libro: str):
         BIBLIOTECA_PRINCIPAL.guardar_libros(libros)
         print(f"Libro '{libro}' eliminado de la biblioteca.")
 
-def modificar_libro(titulo_actual: str, nuevo_titulo: str | None = None, nuevo_autor: str | None = None, nuevo_anio: str | None = None, nueva_descripcion: str | None = None):
+def modificar_libro(titulo_actual: str, nuevo_titulo: str | None = None, nuevo_autor: str | None = None, nuevo_anio: str | None = None, nueva_descripcion: str | None = None, nuevo_genero: str | None = None):
     """ Modifica los atributos de un libro existente. """
     libros = BIBLIOTECA_PRINCIPAL.cargar_libros()
     libro_encontrado = None
@@ -241,6 +241,9 @@ def modificar_libro(titulo_actual: str, nuevo_titulo: str | None = None, nuevo_a
                 libro_modificado = True
             if nueva_descripcion:
                 libro["descripcion"] = nueva_descripcion
+                libro_modificado = True
+            if nuevo_genero:
+                libro["genero"] = nuevo_genero
                 libro_modificado = True
             break
 
@@ -430,6 +433,13 @@ def main():
         default=None,
         type=str
     )
+    modificar_parser.add_argument(
+        '-g', '--genero',
+        help='Nuevo genero para el libro',
+        metavar='GENERO',
+        default=None,
+        type=str
+    )
 
     args = parser.parse_args()
 
@@ -442,7 +452,7 @@ def main():
     elif args.comando == "eliminar":
         eliminar_libro(args.libro)
     elif args.comando == "modificar":
-        modificar_libro(args.titulo, args.nombre, args.autor, args.anio_publicacion, args.descripcion)
+        modificar_libro(args.titulo, args.nombre, args.autor, args.anio_publicacion, args.descripcion, args.genero)
     elif args.comando == "version":
         mostrar_version()
     elif args.comando is None:
