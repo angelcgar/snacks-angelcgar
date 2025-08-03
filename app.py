@@ -5,14 +5,20 @@ import json
 import subprocess
 import argparse
 from pathlib import Path
+from enum import Enum
 
 HOME_USER = os.path.expanduser("~")
 BIBLIOTECA_JSON = os.path.join(HOME_USER, ".config", "biblioteca_cli_config", "biblioteca_cli.json")
 CONFIG_FILE_PATH = os.path.join(HOME_USER, ".config", "biblioteca_cli_config", "biblioteca_cli_config.json")
 
+class EstadoLibro(Enum):
+    LEIDO = "leido"
+    LEYENDO = "leyendo"
+    NO_LEIDO = "no leido"
+
 class Libro:
     # Crear un id para cada libro
-    def __init__(self, titulo: str, autor: str, genero: str, anio_publicacion: str, path_absoluto: str, idioma: str, estado: str, descripcion: str, lo_leo_por: str):
+    def __init__(self, titulo: str, autor: str, genero: str, anio_publicacion: str, path_absoluto: str, idioma: str, estado: EstadoLibro, descripcion: str, lo_leo_por: str):
         self._titulo = titulo
         self._autor = autor
         self._genero = genero
@@ -59,7 +65,7 @@ class Libro:
             "genero": self.genero,
             "anio_publicacion": self.anio_publicacion,
             "idioma": self.idioma,
-            "estado": self.estado,
+            "estado": self.estado.value,
             "abspath": self._path_absoluto,
             "descripcion": self.descripcion,
         }
@@ -97,7 +103,12 @@ class Biblioteca:
     def mostrar_todos_los_libros_disponibles(self):
         print(f'Libros disponibles en la biblioteca {self._nombre}'.center(70, "="))
         for libro in self._libros:
-            if libro.get("estado") == "disponible":
+            self.mostrar_libros(libro)
+
+    def mostrar_todos_los_libros_no_leidos(self):
+        print(f'Libros disponibles en la biblioteca {self._nombre}'.center(70, "="))
+        for libro in self._libros:
+            if libro.get("estado") == EstadoLibro.NO_LEIDO.value:
                 self.mostrar_libros(libro)
 
     def mostrar_libros(self, libro: dict[str, str]):
@@ -137,7 +148,7 @@ def cargar_configuracion() -> dict[str, str]:
 
 BIBLIOTECA_PRINCIPAL = Biblioteca("biblioteca_inicial")
 
-def agregar_libro(file: str | None = None, titulo: str | None = None, autor: str | None = None, genero: str | None = None, anio_publicacion: str | None = None, idioma: str | None = None, estado: str | None = None, descripcion: str | None = None, lo_leo_por: str | None = None):
+def agregar_libro(file: str | None = None, titulo: str | None = None, autor: str | None = None, genero: str | None = None, anio_publicacion: str | None = None, idioma: str | None = None, estado: EstadoLibro | None = None, descripcion: str | None = None, lo_leo_por: str | None = None):
     """ Agrega un libro a la biblioteca."""
     if anio_publicacion is None:
         anio_publicacion = "2023"
@@ -152,7 +163,13 @@ def agregar_libro(file: str | None = None, titulo: str | None = None, autor: str
         idioma = "es"
 
     if estado is None:
-        estado = "disponible"
+        estado = EstadoLibro.NO_LEIDO
+    else:
+        try:
+            estado = EstadoLibro(estado.value.lower())
+        except ValueError:
+            print(f"Error: El estado del libro debe ser uno de los siguientes: {', '.join([e.value for e in EstadoLibro])}")
+            return
 
     if descripcion is None:
         descripcion = "Libro sin descripción"
@@ -228,7 +245,7 @@ def eliminar_libro(libro: str):
         BIBLIOTECA_PRINCIPAL.guardar_libros(libros)
         print(f"Libro '{libro}' eliminado de la biblioteca.")
 
-def modificar_libro(titulo_actual: str, nuevo_titulo: str | None = None, nuevo_autor: str | None = None, nuevo_anio: str | None = None, nueva_descripcion: str | None = None, nuevo_genero: str | None = None):
+def modificar_libro(titulo_actual: str, nuevo_titulo: str | None = None, nuevo_autor: str | None = None, nuevo_anio: str | None = None, nueva_descripcion: str | None = None, nuevo_genero: str | None = None, nuevo_estado: str | None = None):
     """ Modifica los atributos de un libro existente. """
     libros = BIBLIOTECA_PRINCIPAL.cargar_libros()
     libro_encontrado = None
@@ -253,6 +270,14 @@ def modificar_libro(titulo_actual: str, nuevo_titulo: str | None = None, nuevo_a
             if nuevo_genero:
                 libro["genero"] = nuevo_genero
                 libro_modificado = True
+            if nuevo_estado:
+                try:
+                    estado = EstadoLibro(nuevo_estado.lower())
+                    libro["estado"] = estado.value
+                    libro_modificado = True
+                except ValueError:
+                    print(f"Error: El estado del libro debe ser uno de los siguientes: {', '.join([e.value for e in EstadoLibro])}")
+                    return
             break
 
     if not libro_encontrado:
@@ -351,6 +376,14 @@ def main():
         '--lo_leo_por',
         help='Espacio para determinar el por que leo este libro',
         metavar='LO_LEO_POR',
+        default=None,
+        nargs='?',
+        type=str
+    )
+    agregar_parser.add_argument(
+        '--descripcion',
+        help='Descripción del libro',
+        metavar='DESCRIPCION',
         default=None,
         nargs='?',
         type=str
@@ -465,10 +498,18 @@ def main():
         type=str
     )
 
+    modificar_parser.add_argument(
+        '-e', '--estado',
+        help='Nuevo estado para el libro',
+        metavar='ESTADO',
+        default=None,
+        type=str
+    )
+
     args = parser.parse_args()
 
     if args.comando == "agregar":
-        agregar_libro(args.file, args.titulo, args.autor, args.genero, args.anio_publicacion, args.idioma, args.estado, args.lo_leo_por)
+        agregar_libro(args.file, args.titulo, args.autor, args.genero, args.anio_publicacion, args.idioma, args.estado, args.descripcion, args.lo_leo_por)
     elif args.comando == "leer":
         abrir_libro(args.libro)
     elif args.comando == "listar":
@@ -476,7 +517,7 @@ def main():
     elif args.comando == "eliminar":
         eliminar_libro(args.libro)
     elif args.comando == "modificar":
-        modificar_libro(args.titulo, args.nombre, args.autor, args.anio_publicacion, args.descripcion, args.genero)
+        modificar_libro(args.titulo, args.nombre, args.autor, args.anio_publicacion, args.descripcion, args.genero, args.estado)
     elif args.comando == "version":
         mostrar_version()
     elif args.comando is None:
