@@ -137,7 +137,7 @@ def cargar_configuracion() -> dict[str, str]:
 
 BIBLIOTECA_PRINCIPAL = Biblioteca("biblioteca_inicial")
 
-def agregar_libro(file: str | None = None, autor: str | None = None, genero: str | None = None, anio_publicacion: str | None = None, idioma: str | None = None, estado: str | None = None, descripcion: str | None = None, lo_leo_por: str | None = None):
+def agregar_libro(file: str | None = None, titulo: str | None = None, autor: str | None = None, genero: str | None = None, anio_publicacion: str | None = None, idioma: str | None = None, estado: str | None = None, descripcion: str | None = None, lo_leo_por: str | None = None):
     """ Agrega un libro a la biblioteca."""
     if anio_publicacion is None:
         anio_publicacion = "2023"
@@ -161,11 +161,15 @@ def agregar_libro(file: str | None = None, autor: str | None = None, genero: str
         lo_leo_por = "Interés personal"
 
     if file:
-        normalized_book_name = file.strip().lower()[:-4].replace(" ", "_")
+        if titulo is None:
+            titulo = file[:-4]
+
+        titulo = titulo.strip().lower().replace(" ", "_")
+
         current_path = str(Path.cwd())
         path_libro = os.path.join(current_path, file)
 
-        current_libro = Libro(titulo=normalized_book_name, autor=autor, genero=genero, anio_publicacion=anio_publicacion, path_absoluto=path_libro, idioma=idioma, estado=estado, descripcion=descripcion, lo_leo_por=lo_leo_por)
+        current_libro = Libro(titulo=titulo, autor=autor, genero=genero, anio_publicacion=anio_publicacion, path_absoluto=path_libro, idioma=idioma, estado=estado, descripcion=descripcion, lo_leo_por=lo_leo_por)
         BIBLIOTECA_PRINCIPAL.guardar_libro(current_libro.convertir_a_dict())
 
 def abrir_libro(libro: str):
@@ -289,7 +293,15 @@ def main():
     )
     agregar_parser.add_argument(
         '-f', '--file',
-        help='Identificador para cada libro (ej: nombre_del_libro.pdf)',
+        help='Dirección relativa para el libro (ej: nombre_del_libro.pdf)',
+        metavar='ARCHIVO',
+        default=None,
+        type=str,
+        nargs='?'  # Permite que el argumento sea opcional
+    )
+    agregar_parser.add_argument(
+        '-t', '--titulo',
+        help='Identificador único para cada libro (ej: nombre_del_libro)',
         metavar='NOMBRE',
         default=None,
         type=str,
@@ -456,7 +468,7 @@ def main():
     args = parser.parse_args()
 
     if args.comando == "agregar":
-        agregar_libro(args.file, args.autor, args.genero, args.anio_publicacion, args.idioma, args.estado, args.lo_leo_por)
+        agregar_libro(args.file, args.titulo, args.autor, args.genero, args.anio_publicacion, args.idioma, args.estado, args.lo_leo_por)
     elif args.comando == "leer":
         abrir_libro(args.libro)
     elif args.comando == "listar":
