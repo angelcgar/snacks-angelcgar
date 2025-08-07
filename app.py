@@ -197,6 +197,21 @@ def modificar_configuracion(path: str | None = None, date_format: str | None = N
     for key, value in configuracion.items():
         print(f"{key}: {value}")
 
+def crear_directorio():
+    anio = datetime.now().year
+    mes_nombre = datetime.now().strftime("%B").lower()
+    mes_numero = datetime.now().strftime("%m")
+    nombre_directorio = f"{str(anio)[2:]}_{mes_numero}_{mes_nombre}"
+
+    print(f"Creando directorio para {nombre_directorio}...")
+
+    if os.path.exists(nombre_directorio):
+        print(f"El directorio '{nombre_directorio}' ya existe. No se creará uno nuevo.")
+        return
+
+    print(f"Directorio '{nombre_directorio}' no existe. Creando...")
+    os.mkdir(nombre_directorio)
+
 def main():
     plantillas = cargar_plantillas()
 
@@ -306,6 +321,13 @@ def main():
         nargs='?'
     )
 
+    # Comando para crear un nuevo directorio
+    subparsers.add_parser(
+        'directorio',
+        help='Crea un nuevo directorio',
+        description='Crea un nuevo directorio llamado "carpeta_nueva" en el directorio actual'
+    )
+
     args = parser.parse_args()
 
     if args.comando == 'crear':
@@ -318,6 +340,8 @@ def main():
         print("pass")
     elif args.comando == 'config':
         modificar_configuracion(args.path, args.date_format)
+    elif args.comando == 'directorio':
+        crear_directorio()
     elif args.comando is None:
         parser.print_help()
     else:
