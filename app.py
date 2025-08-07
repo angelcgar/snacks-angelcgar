@@ -212,6 +212,14 @@ def crear_directorio():
     print(f"Directorio '{nombre_directorio}' no existe. Creando...")
     os.mkdir(nombre_directorio)
 
+def mostrar_version():
+    """Muestra la versión del sistema."""
+    configuracion = cargar_configuracion()
+    print(f"{configuracion['name']} - Versión {configuracion['version']}")
+    print(f"Usuario: {configuracion['user']}")
+    print(f"Directorio de bitácoras: {configuracion['log_directory']}")
+    print(f"Formato de fecha: {configuracion['date_format']}")
+
 def main():
     plantillas = cargar_plantillas()
 
@@ -328,6 +336,13 @@ def main():
         description='Crea un nuevo directorio llamado "carpeta_nueva" en el directorio actual'
     )
 
+    # Comando para mostrar la versión del sistema
+    subparsers.add_parser(
+        'version',
+        help='Muestra la versión del sistema',
+        description='Muestra la versión actual del sistema y detalles de configuración'
+    )
+
     args = parser.parse_args()
 
     if args.comando == 'crear':
@@ -342,6 +357,8 @@ def main():
         modificar_configuracion(args.path, args.date_format)
     elif args.comando == 'directorio':
         crear_directorio()
+    elif args.comando == 'version':
+        mostrar_version()
     elif args.comando is None:
         parser.print_help()
     else:
