@@ -246,7 +246,7 @@ def eliminar_libro(libro: str):
         BIBLIOTECA_PRINCIPAL.guardar_libros(libros)
         print(f"Libro '{libro}' eliminado de la biblioteca.")
 
-def modificar_libro(titulo_actual: str, nuevo_titulo: str | None = None, nuevo_autor: str | None = None, nuevo_anio: str | None = None, nueva_descripcion: str | None = None, nuevo_genero: str | None = None, nuevo_estado: str | None = None):
+def modificar_libro(titulo_actual: str, nuevo_titulo: str | None = None, nuevo_autor: str | None = None, nuevo_genero: str | None = None, nuevo_anio: str | None = None, nuevo_idioma: str | None = None, nuevo_estado: str | None = None, nueva_descripcion: str | None = None, lo_leo_por: str | None = None):
     """ Modifica los atributos de un libro existente. """
     libros = BIBLIOTECA_PRINCIPAL.cargar_libros()
     libro_encontrado = None
@@ -509,9 +509,9 @@ def main():
         type=str
     )
     modificar_parser.add_argument(
-        '--descripcion',
-        help='Nueva descripción para el libro',
-        metavar='DESCRIPCION',
+        '-i', '--idioma',
+        help='Cambiar el idioma del libro',
+        metavar='IDIOMA',
         default=None,
         type=str
     )
@@ -519,6 +519,20 @@ def main():
         '-g', '--genero',
         help='Nuevo genero para el libro',
         metavar='GENERO',
+        default=None,
+        type=str
+    )
+    modificar_parser.add_argument(
+        '--descripcion',
+        help='Nueva descripción para el libro',
+        metavar='DESCRIPCION',
+        default=None,
+        type=str
+    )
+    modificar_parser.add_argument(
+        '--lo_leo_por',
+        help='Nuevo argumento del por que estoy leyendo este libro',
+        metavar='LO LEO POR',
         default=None,
         type=str
     )
@@ -555,7 +569,7 @@ def main():
     elif args.comando == "eliminar":
         eliminar_libro(args.libro)
     elif args.comando == "modificar":
-        modificar_libro(args.titulo, args.nombre, args.autor, args.anio_publicacion, args.descripcion, args.genero, args.estado)
+        modificar_libro(args.titulo, args.nombre, args.autor, args.genero, args.anio_publicacion, args.idioma, args.estado, args.descripcion, args.lo_leo_por)
     elif args.comando == "info":
         mostrar_info_libro(args.titulo)
     elif args.comando == "version":
