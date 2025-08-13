@@ -68,6 +68,7 @@ class Libro:
             "estado": self.estado.value,
             "abspath": self._path_absoluto,
             "descripcion": self.descripcion,
+            "lo_leo_por": self._lo_leo_por
         }
 
 class Biblioteca:
