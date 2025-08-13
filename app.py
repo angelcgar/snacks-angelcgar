@@ -296,6 +296,30 @@ def mostrar_version():
     version_actual = cargar_configuracion()['version']
     print(f"Versión del CLI: {version_actual}")
 
+def mostrar_info_libro(titulo: str):
+    """ Muestra la información detallada de un libro. """
+    libros = BIBLIOTECA_PRINCIPAL.cargar_libros()
+    libro_encontrado = None
+    for libro in libros:
+        if libro["titulo"].lower() == titulo.lower():
+            libro_encontrado = libro
+            break
+
+    if libro_encontrado:
+        print(f"Información de '{libro_encontrado['titulo']}'".center(70, '='))
+        print(f"- Título: {libro_encontrado['titulo']}")
+        print(f"- Autor: {libro_encontrado['autor']}")
+        print(f"- Género: {libro_encontrado['genero']}")
+        print(f"- Año de publicación: {libro_encontrado['anio_publicacion']}")
+        print(f"- Idioma: {libro_encontrado['idioma']}")
+        print(f"- Estado: {libro_encontrado['estado']}")
+        print(f"- Path: {libro_encontrado['abspath']}")
+        print(f"- Descripción: {libro_encontrado['descripcion']}")
+        print(f"- Lo leo por: {libro_encontrado['lo_leo_por']}")
+    else:
+        print(f"Error: No se encontró el libro con el título '{titulo}'.")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Biblioteca CLI - Sistema para gestionar libros desde la Terminal',
@@ -507,6 +531,19 @@ def main():
         type=str
     )
 
+    # Comando para mostrar informacion de un libro
+    info_parser = subparsers.add_parser(
+        "info",
+        help='Muestra la información detallada de un libro',
+        description='Muestra toda la información de un libro específico'
+    )
+    info_parser.add_argument(
+        'titulo',
+        help='Título del libro a mostrar',
+        metavar='TITULO',
+        type=str
+    )
+
     args = parser.parse_args()
 
     if args.comando == "agregar":
@@ -519,6 +556,8 @@ def main():
         eliminar_libro(args.libro)
     elif args.comando == "modificar":
         modificar_libro(args.titulo, args.nombre, args.autor, args.anio_publicacion, args.descripcion, args.genero, args.estado)
+    elif args.comando == "info":
+        mostrar_info_libro(args.titulo)
     elif args.comando == "version":
         mostrar_version()
     elif args.comando is None:
