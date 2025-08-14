@@ -16,9 +16,14 @@ class EstadoLibro(Enum):
     LEYENDO = "leyendo"
     NO_LEIDO = "no leido"
 
+class Prioridad(Enum):
+    IMPORTANTE = "importante"
+    MEDIA = "media"
+    BAJA = "baja"
+
 class Libro:
     # Crear un id para cada libro
-    def __init__(self, titulo: str, autor: str, genero: str, anio_publicacion: str, path_absoluto: str, idioma: str, estado: EstadoLibro, descripcion: str, lo_leo_por: str):
+    def __init__(self, titulo: str, autor: str, genero: str, anio_publicacion: str, path_absoluto: str, idioma: str, estado: EstadoLibro, descripcion: str, lo_leo_por: str, prioridad: Prioridad):
         self._titulo = titulo
         self._autor = autor
         self._genero = genero
@@ -28,6 +33,7 @@ class Libro:
         self._estado = estado
         self._descripcion = descripcion
         self._lo_leo_por = lo_leo_por
+        self._prioridad = prioridad
 
     @property
     def titulo(self):
@@ -57,6 +63,10 @@ class Libro:
     def descripcion(self):
         return self._descripcion
 
+    @property
+    def prioridad(self):
+        return self._prioridad
+
 
     def convertir_a_dict(self) -> dict[str, str]:
         return {
@@ -68,7 +78,8 @@ class Libro:
             "estado": self.estado.value,
             "abspath": self._path_absoluto,
             "descripcion": self.descripcion,
-            "lo_leo_por": self._lo_leo_por
+            "lo_leo_por": self._lo_leo_por,
+            "prioridad": self.prioridad.value
         }
 
 class Biblioteca:
@@ -149,7 +160,7 @@ def cargar_configuracion() -> dict[str, str]:
 
 BIBLIOTECA_PRINCIPAL = Biblioteca("biblioteca_inicial")
 
-def agregar_libro(file: str | None = None, titulo: str | None = None, autor: str | None = None, genero: str | None = None, anio_publicacion: str | None = None, idioma: str | None = None, estado: EstadoLibro | None = None, descripcion: str | None = None, lo_leo_por: str | None = None):
+def agregar_libro(file: str | None = None, titulo: str | None = None, autor: str | None = None, genero: str | None = None, anio_publicacion: str | None = None, idioma: str | None = None, estado: EstadoLibro | None = None, descripcion: str | None = None, lo_leo_por: str | None = None, prioridad: Prioridad | None = None):
     """ Agrega un libro a la biblioteca."""
     if anio_publicacion is None:
         anio_publicacion = "2023"
@@ -178,6 +189,15 @@ def agregar_libro(file: str | None = None, titulo: str | None = None, autor: str
     if lo_leo_por is None:
         lo_leo_por = "Interés personal"
 
+    if prioridad is None:
+        prioridad = Prioridad.BAJA
+    else:
+        try:
+            prioridad = Prioridad(prioridad.value.lower())
+        except ValueError:
+            print(f"Error: La prioridad del libro debe ser una de los siguientes: {', '.join([p.value for p in Prioridad])}")
+            return
+
     if file:
         if titulo is None:
             titulo = file[:-4]
@@ -187,7 +207,7 @@ def agregar_libro(file: str | None = None, titulo: str | None = None, autor: str
         current_path = str(Path.cwd())
         path_libro = os.path.join(current_path, file)
 
-        current_libro = Libro(titulo=titulo, autor=autor, genero=genero, anio_publicacion=anio_publicacion, path_absoluto=path_libro, idioma=idioma, estado=estado, descripcion=descripcion, lo_leo_por=lo_leo_por)
+        current_libro = Libro(titulo=titulo, autor=autor, genero=genero, anio_publicacion=anio_publicacion, path_absoluto=path_libro, idioma=idioma, estado=estado, descripcion=descripcion, lo_leo_por=lo_leo_por, prioridad=prioridad)
         BIBLIOTECA_PRINCIPAL.guardar_libro(current_libro.convertir_a_dict())
 
 def abrir_libro(libro: str):
@@ -198,7 +218,7 @@ def abrir_libro(libro: str):
 
         subprocess.run(["zathura", str(current_libro)], check=True)
 
-def listar_libros(autor: str | None = None, genero: str | None = None, estado: str | None = None):
+def listar_libros(autor: str | None = None, genero: str | None = None, estado: str | None = None, prioridad: str | None = None, ordenar_por_prioridad: bool = False):
     """
     Lista los libros de la biblioteca.
     - Por defecto, lista todos los libros disponibles.
@@ -210,7 +230,7 @@ def listar_libros(autor: str | None = None, genero: str | None = None, estado: s
         return
 
     # Comportamiento por defecto: listar libros disponibles si no hay filtros
-    if autor is None and genero is None and estado is None:
+    if autor is None and genero is None and estado is None and prioridad is None:
         BIBLIOTECA_PRINCIPAL.mostrar_todos_los_libros_disponibles()
         return
 
@@ -225,6 +245,13 @@ def listar_libros(autor: str | None = None, genero: str | None = None, estado: s
 
     if estado:
         libros_a_mostrar = [libro for libro in libros_a_mostrar if libro.get("estado", "").lower() == estado.lower()]
+
+    if prioridad:
+        libros_a_mostrar = [libro for libro in libros_a_mostrar if libro.get("prioridad", "").lower() == prioridad.lower()]
+
+    if ordenar_por_prioridad:
+        prioridad_orden = {p.value: i for i, p in enumerate(Prioridad)}
+        libros_a_mostrar = sorted(libros_a_mostrar, key=lambda x: prioridad_orden.get(x.get("prioridad"), len(prioridad_orden))) # type: ignore
 
     if not libros_a_mostrar:
         print("No se encontraron libros con los criterios especificados.")
@@ -246,7 +273,7 @@ def eliminar_libro(libro: str):
         BIBLIOTECA_PRINCIPAL.guardar_libros(libros)
         print(f"Libro '{libro}' eliminado de la biblioteca.")
 
-def modificar_libro(titulo_actual: str, nuevo_titulo: str | None = None, nuevo_autor: str | None = None, nuevo_genero: str | None = None, nuevo_anio: str | None = None, nuevo_idioma: str | None = None, nuevo_estado: str | None = None, nueva_descripcion: str | None = None, lo_leo_por: str | None = None):
+def modificar_libro(titulo_actual: str, nuevo_titulo: str | None = None, nuevo_autor: str | None = None, nuevo_genero: str | None = None, nuevo_anio: str | None = None, nuevo_idioma: str | None = None, nuevo_estado: str | None = None, nueva_descripcion: str | None = None, lo_leo_por: str | None = None, nueva_prioridad: str | None = None):
     """ Modifica los atributos de un libro existente. """
     libros = BIBLIOTECA_PRINCIPAL.cargar_libros()
     libro_encontrado = None
@@ -278,6 +305,14 @@ def modificar_libro(titulo_actual: str, nuevo_titulo: str | None = None, nuevo_a
                     libro_modificado = True
                 except ValueError:
                     print(f"Error: El estado del libro debe ser uno de los siguientes: {', '.join([e.value for e in EstadoLibro])}")
+                    return
+            if nueva_prioridad:
+                try:
+                    prioridad = Prioridad(nueva_prioridad.lower())
+                    libro["prioridad"] = prioridad.value
+                    libro_modificado = True
+                except ValueError:
+                    print(f"Error: La prioridad del libro debe ser una de las siguientes: {', '.join([p.value for p in Prioridad])}")
                     return
             break
 
@@ -313,6 +348,7 @@ def mostrar_info_libro(titulo: str):
         print(f"- Año de publicación: {libro_encontrado['anio_publicacion']}")
         print(f"- Idioma: {libro_encontrado['idioma']}")
         print(f"- Estado: {libro_encontrado['estado']}")
+        print(f"- Prioridad: {libro_encontrado.get('prioridad', 'No especificada')}")
         print(f"- Path: {libro_encontrado['abspath']}")
         print(f"- Descripción: {libro_encontrado['descripcion']}")
         print(f"- Lo leo por: {libro_encontrado['lo_leo_por']}")
@@ -413,6 +449,14 @@ def main():
         nargs='?',
         type=str
     )
+    agregar_parser.add_argument(
+        '-p', '--prioridad',
+        help='Prioridad del libro (alta, media, baja)',
+        metavar='PRIORIDAD',
+        default=None,
+        nargs='?',
+        type=str
+    )
 
     # Comando para mostrar la versión
     version_parser = subparsers.add_parser(
@@ -460,6 +504,18 @@ def main():
         metavar='ESTADO',
         default=None,
         type=str
+    )
+    listar_parser.add_argument(
+        '-p', '--prioridad',
+        help='Filtra los libros por prioridad',
+        metavar='PRIORIDAD',
+        default=None,
+        type=str
+    )
+    listar_parser.add_argument(
+        '--ordenar_por_prioridad',
+        help='Ordena los libros por prioridad (ascendente)',
+        action='store_true'
     )
 
     # Comando para eliminar un libro
@@ -545,6 +601,14 @@ def main():
         type=str
     )
 
+    modificar_parser.add_argument(
+        '-p', '--prioridad',
+        help='Nueva prioridad para el libro',
+        metavar='PRIORIDAD',
+        default=None,
+        type=str
+    )
+
     # Comando para mostrar informacion de un libro
     info_parser = subparsers.add_parser(
         "info",
@@ -561,15 +625,15 @@ def main():
     args = parser.parse_args()
 
     if args.comando == "agregar":
-        agregar_libro(args.file, args.titulo, args.autor, args.genero, args.anio_publicacion, args.idioma, args.estado, args.descripcion, args.lo_leo_por)
+        agregar_libro(args.file, args.titulo, args.autor, args.genero, args.anio_publicacion, args.idioma, args.estado, args.descripcion, args.lo_leo_por, args.prioridad)
     elif args.comando == "leer":
         abrir_libro(args.libro)
     elif args.comando == "listar":
-        listar_libros(args.autor, args.genero, args.estado)
+        listar_libros(args.autor, args.genero, args.estado, args.prioridad, args.ordenar_por_prioridad)
     elif args.comando == "eliminar":
         eliminar_libro(args.libro)
     elif args.comando == "modificar":
-        modificar_libro(args.titulo, args.nombre, args.autor, args.genero, args.anio_publicacion, args.idioma, args.estado, args.descripcion, args.lo_leo_por)
+        modificar_libro(args.titulo, args.nombre, args.autor, args.genero, args.anio_publicacion, args.idioma, args.estado, args.descripcion, args.lo_leo_por, args.prioridad)
     elif args.comando == "info":
         mostrar_info_libro(args.titulo)
     elif args.comando == "version":
