@@ -18,7 +18,7 @@ def load_config():
     print("Cargando configuración...")
     config_data: Dict[str, Any] = {
         "name": "bitacora_cli",
-        "version": "1.1.4",
+        "version": "1.1.5",
         "configuration": {
             "user": SYSTEM_USER,
             "paths": {
