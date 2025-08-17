@@ -6,7 +6,7 @@ import os
 from datetime import datetime, UTC
 
 # Constantes
-VERSION = "0.0.2"
+VERSION = "0.0.3"
 AUTHOR = "Sat Naing"
 DESTINO = os.path.expanduser("~/Descargas/md_con_metadatos/")
 
