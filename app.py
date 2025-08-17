@@ -8,7 +8,7 @@ from datetime import datetime, UTC
 # Constantes
 VERSION = "0.0.2"
 AUTHOR = "Sat Naing"
-DESTINO = os.path.expanduser("~/Descargas/md_con_formatos/")
+DESTINO = os.path.expanduser("~/Descargas/md_con_metadatos/")
 
 def hola_mundo(nombre):
     print(f"hola \"{nombre}\"")
