@@ -2,7 +2,8 @@
 import argparse
 import sys
 import unicodedata
-from datetime import datetime
+import os
+from datetime import datetime, UTC
 
 # Constantes
 VERSION = "0.0.1"
@@ -15,25 +16,35 @@ def slugify(texto: str) -> str:
     """
     Convierte un texto en un slug legible para URLs.
     - Elimina acentos.
-    - Mantiene la ñ como ñ.
+    - Mantiene la ñ y caracteres como ¿?.
     - Convierte espacios en guiones.
     - Pone todo en minúsculas.
     """
     # Normalizar pero conservar ñ
-    texto = texto.replace("ñ", "__enie__")  # marcador temporal
+    texto = texto.replace("ñ", "__enie__")
+    texto = texto.replace("¿", "__interrogacion__")
+
     texto = unicodedata.normalize("NFD", texto)
     texto = texto.encode("ascii", "ignore").decode("utf-8")
+
     texto = texto.replace("__enie__", "ñ")
-    # Reemplazar espacios y poner en minúscula
-    texto = texto.strip().lower().replace(" ", "-")
+    texto = texto.replace("__interrogacion__", "¿")
+
+    # Limpieza básica
+    texto = texto.strip().lower()
+    texto = texto.replace(" ", "-")
     return texto
 
-def procesar_basico(path_archivo, description=None):
+def procesar_basico(path_archivo, description=None, renombrar=False):
     try:
         with open(path_archivo, "r", encoding="utf-8") as f:
             lineas = f.readlines()
     except FileNotFoundError:
         print(f"Error: el archivo '{path_archivo}' no existe.")
+        sys.exit(1)
+
+    if not lineas:
+        print("Error: el archivo está vacío.")
         sys.exit(1)
 
     if lineas[0].startswith("---"):
@@ -48,7 +59,7 @@ def procesar_basico(path_archivo, description=None):
     titulo = lineas[0].lstrip("#").strip()
     slug = slugify(titulo)
 
-    ahora = datetime.utcnow().isoformat() + "Z"
+    ahora = datetime.now(UTC).isoformat()
 
     frontmatter = f"""---
 author: {AUTHOR}
@@ -68,13 +79,26 @@ description: {description if description else "How you can make AstroPaper theme
     # Reescribir archivo con frontmatter + contenido original (sin la primera línea de título)
     nuevo_contenido = frontmatter + "".join(lineas[1:])
 
-    with open(path_archivo, "w", encoding="utf-8") as f:
+    nuevo_nombre = path_archivo
+    if renombrar:
+        base_dir = os.path.dirname(path_archivo) or "."
+        nuevo_nombre = os.path.join(base_dir, f"{slug}.md")
+        # Si ya existe, evitar sobreescribir accidentalmente
+        if os.path.exists(nuevo_nombre):
+            print(f"Error: ya existe un archivo llamado '{nuevo_nombre}', no se renombrará.")
+            sys.exit(1)
+        os.rename(path_archivo, nuevo_nombre)
+
+    with open(nuevo_nombre, "w", encoding="utf-8") as f:
         f.write(nuevo_contenido)
 
-    print(f"Archivo '{path_archivo}' modificado con éxito.")
+    print(f"Archivo '{nuevo_nombre}' modificado con éxito.")
 
 def main():
-    parser = argparse.ArgumentParser(description="CLI para manejar archivos Markdown")
+    parser = argparse.ArgumentParser(
+        prog="app.py",
+        description="CLI para manejar archivos Markdown"
+    )
 
     # Subcomandos
     subparsers = parser.add_subparsers(dest="comando", required=True)
@@ -90,6 +114,7 @@ def main():
     parser_basico = subparsers.add_parser("basico", help="Agrega frontmatter a un archivo Markdown")
     parser_basico.add_argument("-a", "--agregar", type=str, required=True, help="Ruta del archivo Markdown a modificar")
     parser_basico.add_argument("-d", "--description", type=str, help="Descripción personalizada para el frontmatter")
+    parser_basico.add_argument("--renombrar", action="store_true", help="Renombrar el archivo usando el slug generado")
 
     # Parsear argumentos
     args = parser.parse_args()
@@ -99,7 +124,7 @@ def main():
     elif args.comando == "hola":
         hola_mundo(args.nombre)
     elif args.comando == "basico":
-        procesar_basico(args.agregar, args.description)
+        procesar_basico(args.agregar, args.description, args.renombrar)
 
 if __name__ == "__main__":
     main()
