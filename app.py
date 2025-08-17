@@ -103,6 +103,23 @@ description: {description if description else "How you can make AstroPaper theme
 
     print(f"✅ Archivo '{nuevo_nombre}' modificado con éxito.")
 
+def mover_a_destino(path_archivo: str):
+    """Mueve un archivo al directorio DESTINO sin modificarlo."""
+    os.makedirs(DESTINO, exist_ok=True)
+    nombre_archivo = os.path.basename(path_archivo)
+    destino_path = os.path.join(DESTINO, nombre_archivo)
+
+    if os.path.exists(destino_path):
+        print(f"⚠️ Error: ya existe un archivo en destino con el nombre '{destino_path}'.")
+        sys.exit(1)
+
+    try:
+        os.rename(path_archivo, destino_path)
+        print(f"✅ Archivo movido a '{destino_path}' con éxito.")
+    except FileNotFoundError:
+        print(f"❌ Error: el archivo '{path_archivo}' no existe.")
+        sys.exit(1)
+
 def main():
     parser = argparse.ArgumentParser(
         prog="app.py",
@@ -126,6 +143,10 @@ def main():
     parser_basico.add_argument("--renombrar", action="store_true", help="Renombrar el archivo usando el slug generado")
     parser_basico.add_argument("--guardar", action="store_true", help=f"Guardar el archivo en {DESTINO}")
 
+    # Comando "guardar"
+    parser_guardar = subparsers.add_parser("guardar", help=f"Mueve un archivo directamente a {DESTINO}")
+    parser_guardar.add_argument("archivo", type=str, help="Ruta del archivo a mover")
+
     args = parser.parse_args()
 
     if args.comando == "version":
@@ -134,6 +155,8 @@ def main():
         hola_mundo(args.nombre)
     elif args.comando == "basico":
         procesar_basico(args.agregar, args.description, args.renombrar, args.guardar)
+    elif args.comando == "guardar":
+        mover_a_destino(args.archivo)
 
 if __name__ == "__main__":
     main()
