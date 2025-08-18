@@ -120,6 +120,45 @@ def mover_a_destino(path_archivo: str):
         print(f"❌ Error: el archivo '{path_archivo}' no existe.")
         sys.exit(1)
 
+def actualizar_fecha(path_archivo: str):
+    """Actualiza la fecha de modificación en el frontmatter de un archivo Markdown."""
+    try:
+        with open(path_archivo, "r", encoding="utf-8") as f:
+            lineas = f.readlines()
+    except FileNotFoundError:
+        print(f"Error: el archivo '{path_archivo}' no existe.")
+        sys.exit(1)
+
+    if not lineas or not lineas[0].startswith("---"):
+        print("Error: el archivo no contiene frontmatter.")
+        sys.exit(1)
+
+    frontmatter_end_index = -1
+    for i, linea in enumerate(lineas[1:], 1):
+        if linea.startswith("---"):
+            frontmatter_end_index = i
+            break
+
+    if frontmatter_end_index == -1:
+        print("Error: el frontmatter no está bien formado.")
+        sys.exit(1)
+
+    mod_datetime_encontrado = False
+    for i in range(1, frontmatter_end_index):
+        if lineas[i].startswith("modDatetime:"):
+            lineas[i] = f"modDatetime: {datetime.now(UTC).isoformat()}\n"
+            mod_datetime_encontrado = True
+            break
+
+    if not mod_datetime_encontrado:
+        print("Error: no se encontró 'modDatetime' en el frontmatter.")
+        sys.exit(1)
+
+    with open(path_archivo, "w", encoding="utf-8") as f:
+        f.writelines(lineas)
+
+    print(f"✅ Fecha de modificación de '{path_archivo}' actualizada con éxito.")
+
 def main():
     parser = argparse.ArgumentParser(
         prog="app.py",
@@ -147,6 +186,10 @@ def main():
     parser_guardar = subparsers.add_parser("guardar", help=f"Mueve un archivo directamente a {DESTINO}")
     parser_guardar.add_argument("archivo", type=str, help="Ruta del archivo a mover")
 
+    # Comando "actualizar"
+    parser_actualizar = subparsers.add_parser("actualizar", help="Actualiza la fecha de modificación de un archivo Markdown")
+    parser_actualizar.add_argument("archivo", type=str, help="Ruta del archivo a actualizar")
+
     args = parser.parse_args()
 
     if args.comando == "version":
@@ -157,6 +200,8 @@ def main():
         procesar_basico(args.agregar, args.description, args.renombrar, args.guardar)
     elif args.comando == "guardar":
         mover_a_destino(args.archivo)
+    elif args.comando == "actualizar":
+        actualizar_fecha(args.archivo)
 
 if __name__ == "__main__":
     main()
