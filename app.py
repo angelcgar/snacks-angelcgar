@@ -25,7 +25,7 @@ def construir_comando_cwebp(file: str, salida: str, metadata_all: bool, lossless
     return comando
 
 
-def comprimir_pequeño(file: str, no_renombrar: bool, metadata_all: bool, lossless: bool):
+def comprimir_pequeño(file: str, no_renombrar: bool, metadata_all: bool, lossless: bool, eliminar: bool = False):
     """Comprime una sola imagen"""
     if not os.path.isfile(file):
         sys.stderr.write(f"❌ Error: No se encontró el archivo {file}\n")
@@ -49,12 +49,20 @@ def comprimir_pequeño(file: str, no_renombrar: bool, metadata_all: bool, lossle
 
     print(f"✔ Imagen comprimida guardada como {salida}")
 
+    # Eliminar archivo original si se solicita
+    if eliminar:
+        try:
+            os.remove(file)
+            print(f"🗑 Imagen original eliminada: {file}")
+        except Exception as e:
+            print(f"⚠ No se pudo eliminar {file}: {e}")
 
-def comprimir_pequeños(files: list[str], no_renombrar: bool, metadata_all: bool, lossless: bool):
+
+def comprimir_pequeños(files: list[str], no_renombrar: bool, metadata_all: bool, lossless: bool, eliminar: bool = False):
     """Comprime múltiples imágenes"""
     for file in files:
         try:
-            comprimir_pequeño(file, no_renombrar, metadata_all, lossless)
+            comprimir_pequeño(file, no_renombrar, metadata_all, lossless, eliminar)
         except Exception as e:
             print(f"⚠ No se pudo comprimir {file}: {e}")
 
@@ -71,6 +79,7 @@ def main():
     parser_pequeño.add_argument("--no-renombrar", action="store_true", help="Mantener el mismo nombre (solo cambia la extensión a .webp)")
     parser_pequeño.add_argument("--metadata-all", action="store_true", help="Conservar todos los metadatos")
     parser_pequeño.add_argument("--lossless", action="store_true", help="Usar compresión sin pérdida")
+    parser_pequeño.add_argument("--eliminar", action="store_true", help="Eliminar la imagen original después de comprimirla")
 
     # Subcomando "pequeños"
     parser_pequeños = subparsers.add_parser("pequeños", help="Comprimir varias imágenes")
@@ -78,14 +87,15 @@ def main():
     parser_pequeños.add_argument("--no-renombrar", action="store_true", help="Mantener el mismo nombre (solo cambia la extensión a .webp)")
     parser_pequeños.add_argument("--metadata-all", action="store_true", help="Conservar todos los metadatos")
     parser_pequeños.add_argument("--lossless", action="store_true", help="Usar compresión sin pérdida")
+    parser_pequeños.add_argument("--eliminar", action="store_true", help="Eliminar las imágenes originales después de comprimirlas")
 
     args = parser.parse_args()
 
     if args.comando == "pequeño":
-        comprimir_pequeño(args.file, args.no_renombrar, args.metadata_all, args.lossless)
+        comprimir_pequeño(args.file, args.no_renombrar, args.metadata_all, args.lossless, args.eliminar)
 
     elif args.comando == "pequeños":
-        comprimir_pequeños(args.files, args.no_renombrar, args.metadata_all, args.lossless)
+        comprimir_pequeños(args.files, args.no_renombrar, args.metadata_all, args.lossless, args.eliminar)
 
 
 if __name__ == "__main__":
