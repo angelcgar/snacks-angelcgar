@@ -6,9 +6,11 @@ import os
 from datetime import datetime, UTC
 
 # Constantes
-VERSION = "0.0.3"
-AUTHOR = "Sat Naing"
-DESTINO = os.path.expanduser("~/Descargas/md_con_metadatos/")
+VERSION = "0.0.4"
+AUTHOR = "Angel Contreras Garcia"
+# Ruta de destino para guardar archivos procesados
+# Asegúrate de que esta ruta sea válida en tu sistema
+DESTINO = os.path.expanduser("~/Dev/blog-angelcgar/src/data/blog/")
 
 def hola_mundo(nombre):
     print(f"hola \"{nombre}\"")
@@ -22,13 +24,12 @@ def slugify(texto: str) -> str:
     - Pone todo en minúsculas.
     """
     texto = texto.replace("ñ", "__enie__")
-    texto = texto.replace("¿", "__interrogacion__")
 
     texto = unicodedata.normalize("NFD", texto)
     texto = texto.encode("ascii", "ignore").decode("utf-8")
 
     texto = texto.replace("__enie__", "ñ")
-    texto = texto.replace("__interrogacion__", "¿")
+    texto = texto.replace("?", "")
     texto = texto.strip().lower()
     texto = texto.replace(" ", "-")
     return texto
@@ -177,7 +178,7 @@ def main():
 
     # Comando "basico"
     parser_basico = subparsers.add_parser("basico", help="Agrega frontmatter a un archivo Markdown")
-    parser_basico.add_argument("-a", "--agregar", type=str, required=True, help="Ruta del archivo Markdown a modificar")
+    parser_basico.add_argument("-a", "--agregar", type=str, required=True, help="Archivo Markdown a modificar")
     parser_basico.add_argument("-d", "--description", type=str, help="Descripción personalizada para el frontmatter")
     parser_basico.add_argument("--renombrar", action="store_true", help="Renombrar el archivo usando el slug generado")
     parser_basico.add_argument("--guardar", action="store_true", help=f"Guardar el archivo en {DESTINO}")
