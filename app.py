@@ -3,10 +3,10 @@ import argparse
 import sys
 import unicodedata
 import os
-from datetime import datetime, UTC
+from datetime import datetime, UTC, timezone
 
 # Constantes
-VERSION = "0.0.5"
+VERSION = "0.0.6"
 AUTHOR = "Angel Contreras Garcia"
 # Ruta de destino para guardar archivos procesados
 # Asegúrate de que esta ruta sea válida en tu sistema
@@ -33,6 +33,12 @@ def slugify(texto: str) -> str:
     texto = texto.strip().lower()
     texto = texto.replace(" ", "-")
     return texto
+
+def get_fixed_timestamp():
+    # Obtiene la fecha y hora actual en UTC
+    dt = datetime.now(timezone.utc)
+    # Devuelve en formato ISO 8601 con Z al final
+    return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 def procesar_basico(path_archivo, description=None, renombrar=False, guardar=False):
     try:
@@ -62,8 +68,8 @@ def procesar_basico(path_archivo, description=None, renombrar=False, guardar=Fal
 
     frontmatter = f"""---
 author: {AUTHOR}
-pubDatetime: {ahora}
-modDatetime: {ahora}
+pubDatetime: {get_fixed_timestamp()}
+modDatetime: {get_fixed_timestamp()}
 title: {titulo}
 slug: {slug}
 featured: true
@@ -147,7 +153,7 @@ def actualizar_fecha(path_archivo: str):
     mod_datetime_encontrado = False
     for i in range(1, frontmatter_end_index):
         if lineas[i].startswith("modDatetime:"):
-            lineas[i] = f"modDatetime: {datetime.now(UTC).isoformat()}\n"
+            lineas[i] = f"modDatetime: {get_fixed_timestamp()}\n"
             mod_datetime_encontrado = True
             break
 
@@ -250,7 +256,7 @@ def main():
     elif args.comando == "hola":
         hola_mundo(args.nombre)
     elif args.comando == "basico":
-        procesar_basico(args.agregar, args.description, args.renombrar, args.guardar)
+        procesar_basico(args.file, args.description, args.renombrar, args.guardar)
     elif args.comando == "guardar":
         mover_a_destino(args.archivo)
     elif args.comando == "actualizar":
