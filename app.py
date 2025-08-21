@@ -6,7 +6,7 @@ import os
 from datetime import datetime, UTC
 
 # Constantes
-VERSION = "0.0.4"
+VERSION = "0.0.5"
 AUTHOR = "Angel Contreras Garcia"
 # Ruta de destino para guardar archivos procesados
 # Asegúrate de que esta ruta sea válida en tu sistema
@@ -162,34 +162,86 @@ def actualizar_fecha(path_archivo: str):
 
 def main():
     parser = argparse.ArgumentParser(
-        prog="app.py",
-        description="CLI para manejar archivos Markdown"
+        description="CLI para manejar archivos Markdown de mi blog personal",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
-    # Subcomandos
-    subparsers = parser.add_subparsers(dest="comando", required=True)
+    # SubComandos
+    subparsers = parser.add_subparsers(
+        dest="comando",
+        required=True
+    )
 
     # Comando "version"
-    subparsers.add_parser("version", help="Muestra la versión del programa")
+    subparsers.add_parser(
+        "version",
+        help="Muestra la versión del programa"
+    )
 
     # Comando "hola"
-    parser_hola = subparsers.add_parser("hola", help="Saluda a una persona")
-    parser_hola.add_argument("--nombre", type=str, default="Joe Doe", help="Nombre de la persona a saludar")
+    parser_hola = subparsers.add_parser(
+        "hola",
+        help="Saluda a una persona"
+    )
+    parser_hola.add_argument("--nombre",
+        type=str,
+        default="Joe Doe",
+        help="Nombre de la persona a saludar"
+    )
 
     # Comando "basico"
-    parser_basico = subparsers.add_parser("basico", help="Agrega frontmatter a un archivo Markdown")
-    parser_basico.add_argument("-a", "--agregar", type=str, required=True, help="Archivo Markdown a modificar")
-    parser_basico.add_argument("-d", "--description", type=str, help="Descripción personalizada para el frontmatter")
-    parser_basico.add_argument("--renombrar", action="store_true", help="Renombrar el archivo usando el slug generado")
-    parser_basico.add_argument("--guardar", action="store_true", help=f"Guardar el archivo en {DESTINO}")
+    parser_basico = subparsers.add_parser(
+        "basico",
+        help="Agrega frontmatter a un archivo Markdown"
+    )
+    parser_basico.add_argument(
+        "-f",
+        "--file",
+        help="Archivo Markdown a modificar",
+        metavar='ARCHIVO.md',
+        type=str,
+        required=True,
+    )
+    parser_basico.add_argument(
+        "-d",
+        "--description",
+        help="Descripción personalizada para el frontmatter",
+        metavar='DESCRIPCION',
+        default=None,
+        type=str,
+    )
+    parser_basico.add_argument(
+        "--renombrar",
+        action="store_true",
+        help="Renombrar el archivo usando el slug generado"
+    )
+    parser_basico.add_argument(
+        "--guardar",
+        action="store_true",
+        help=f"Guardar el archivo en {DESTINO}"
+    )
 
     # Comando "guardar"
-    parser_guardar = subparsers.add_parser("guardar", help=f"Mueve un archivo directamente a {DESTINO}")
-    parser_guardar.add_argument("archivo", type=str, help="Ruta del archivo a mover")
+    parser_guardar = subparsers.add_parser(
+        "guardar",
+        help=f"Mueve un archivo directamente a {DESTINO}"
+    )
+    parser_guardar.add_argument(
+        "archivo",
+        type=str,
+        help="Ruta del archivo a mover"
+    )
 
     # Comando "actualizar"
-    parser_actualizar = subparsers.add_parser("actualizar", help="Actualiza la fecha de modificación de un archivo Markdown")
-    parser_actualizar.add_argument("archivo", type=str, help="Ruta del archivo a actualizar")
+    parser_actualizar = subparsers.add_parser(
+        "actualizar",
+        help="Actualiza la fecha de modificación de un archivo Markdown"
+    )
+    parser_actualizar.add_argument(
+        "archivo",
+        type=str,
+        help="Ruta del archivo a actualizar"
+    )
 
     args = parser.parse_args()
 
