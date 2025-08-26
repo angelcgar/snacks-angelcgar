@@ -371,12 +371,12 @@ def main():
     )
 
     # Comando para agregar una bitacora formateada
-    format_file = subparsers.add_parser(
+    format_parser = subparsers.add_parser(
         'formatear',
         help='Agregar una bitacora formateada',
         description='Este comando permitirá agregar una bitácora con formato específico (en desarrollo)'
     )
-    format_file.add_argument(
+    format_parser.add_argument(
         '-f', '--file',
         help='Archivo de bitácora a formatear',
         metavar='ARCHIVO',
