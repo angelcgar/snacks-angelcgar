@@ -203,7 +203,7 @@ def crear_directorio():
     anio = datetime.now().year
     mes_nombre = datetime.now().strftime("%B").lower()
     mes_numero = datetime.now().strftime("%m")
-    nombre_directorio = f"{str(anio)[2:]}_{mes_numero}_{mes_nombre}"
+    nombre_directorio = f"{str(anio)[2:]}-{mes_numero}-{mes_nombre}"
 
     print(f"Creando directorio para {nombre_directorio}...")
 
