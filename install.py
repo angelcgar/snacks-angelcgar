@@ -20,7 +20,7 @@ def load_config():
     print("Cargando configuración...")
     config_data: Dict[str, Any] = {
         "name": "bitacora_cli",
-        "version": "1.1.6",
+        "version": "1.1.7",
         "configuration": {
             "user": SYSTEM_USER,
             "paths": {
@@ -32,6 +32,10 @@ def load_config():
                 "date_format": "%Y-%m-%d",
                 "date_format_default": "%Y-%m-%d",
                 "datetime_format": "%Y-%m-%d %H:%M:%S",
+            },
+            "system": {
+                "os": os.name,
+                "program_to_open_files": "zathura"
             }
         },
     }
@@ -41,15 +45,16 @@ def load_config():
         json.dump(config_data, f, indent=4)
     print("Datos guardados en datos.json")
 
-    with open(BIBLIOTECA_JSON, "w", encoding='utf-8') as f:
-        tem_var = []
-        json.dump(tem_var, f, indent=4)
 
 def reload_config():
     if os.path.exists(CONFIGURATION_DIRECTORY):
         print(f"El directorio de configuración ya existe: {CONFIGURATION_DIRECTORY}")
         print("Se eliminará y se volverá a instalar el CLI.")
         shutil.rmtree(CONFIGURATION_DIRECTORY)
+
+        with open(BIBLIOTECA_JSON, "w", encoding='utf-8') as f:
+            tem_var = []
+            json.dump(tem_var, f, indent=4)
     else:
         print("El directorio de configuración no existe")
 
@@ -59,11 +64,12 @@ def install_cli():
     cli_source = os.path.join(current_dir, "app.py")  # Ahora apunta a app.py
 
     if (IS_RELOAD):
+        print("Hola")
         reload_config()
 
     # Crear directorios
     Path(USER_EXECUTABLE_PATH).mkdir(parents=True, exist_ok=True)
-    Path(CONFIGURATION_DIRECTORY).mkdir(parents=True, exist_ok=True)
+    # Path(CONFIGURATION_DIRECTORY).mkdir(parents=True, exist_ok=True)
 
     # Copiar el CLI (app.py) con nombre 'biblioteca'
     cli_path = os.path.join(USER_EXECUTABLE_PATH, "biblioteca")
