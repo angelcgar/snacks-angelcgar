@@ -13,12 +13,14 @@ CONFIGURATION_DIRECTORY = os.path.join(HOME_USER, ".config", "bitacora_cli_confi
 USER_EXECUTABLE_PATH = os.path.join(HOME_USER, ".local", "bin")
 CONFIG_FILE_PATH = os.path.join(CONFIGURATION_DIRECTORY,"bitacora_cli_config.json")
 LOG_DIRECTORY = os.path.join(HOME_USER, "bitacoras_diarias")
+# todo: mejorar logica de WORK_SPACE_DIRECTORY
+WORK_SPACE_DIRECTORY = os.path.join("/home/angelcg/Documentos/reflexiones")
 
 def load_config():
     print("Cargando configuración...")
     config_data: Dict[str, Any] = {
         "name": "bitacora_cli",
-        "version": "1.2.3",
+        "version": "1.2.4",
         "configuration": {
             "user": SYSTEM_USER,
             "paths": {
@@ -26,6 +28,7 @@ def load_config():
                 "log_config_directory": CONFIGURATION_DIRECTORY,
                 "log_config_file": CONFIG_FILE_PATH,
                 "user_executable_path": USER_EXECUTABLE_PATH,
+                "WORK_SPACE_DIRECTORY": WORK_SPACE_DIRECTORY,
             },
             "dates": {
                 "date_format": "%Y-%m-%d",

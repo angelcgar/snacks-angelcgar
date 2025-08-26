@@ -42,6 +42,7 @@ def cargar_configuracion() -> dict[str, str]:
     # print(datos['name'])
     return {
         "log_directory": datos['configuration']['paths']['log_directory'],
+        "work_space_directory": datos['configuration']['paths']['work_space_directory'],
         "log_config_directory": datos['configuration']['paths']['log_config_directory'],
         "log_config_file": datos['configuration']['paths']['log_config_file'],
         "user_executable_path": datos['configuration']['paths']['user_executable_path'],
@@ -252,15 +253,17 @@ def fecha_actual():
 
 def crear_commit(message: str | None):
     current_log_directory = cargar_configuracion()['log_directory']
+    work_space_directory = cargar_configuracion()['work_space_directory']
 
     current_directory_executable = Path.cwd()
 
     if (message is None):
         message = fecha_actual()
 
-    if (current_directory_executable):
+    if (current_directory_executable == current_log_directory or current_directory_executable == work_space_directory):
         import subprocess
-        subprocess.run(["git", "commit", "-am", message], check=True)
+        subprocess.run(["git", "add", ".", message], check=True)
+        subprocess.run(["git", "commit", "-m", message], check=True)
 
 def main():
     plantillas = cargar_plantillas()
