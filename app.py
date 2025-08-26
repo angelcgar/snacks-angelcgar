@@ -120,6 +120,8 @@ def crear_bitacora(nombre: str | None = None, plantilla: str | None = None):
 
     print(f"Bitácora creada exitosamente: {ruta_completa}")
 
+    return str(ruta_completa)
+
 def listar_plantillas(show_details: str | None = None):
     """Muestra las plantillas disponibles"""
     plantillas = cargar_plantillas()
@@ -211,6 +213,31 @@ def crear_directorio():
 
     print(f"Directorio '{nombre_directorio}' no existe. Creando...")
     os.mkdir(nombre_directorio)
+
+def formatear_archivo(archivo_md: str):
+    current_file = crear_bitacora()
+
+    if os.path.exists(str(current_file)):
+        print(f"Archivo {current_file} creado correctamente.")
+
+        try:
+            with open(str(current_file), "r", encoding="utf-8") as f:
+                lineas = f.readlines()
+        except FileNotFoundError:
+            print(f"Error: el archivo '{current_file}' no existe.")
+            return
+
+        # Extraer título
+        titulo = lineas[0].lstrip("#").strip()
+
+        # Procesar contenido
+        with open(archivo_md, 'r', encoding='utf-8') as f:
+            archivo_md_contenido = f.read()
+        nuevo_contenido = titulo + archivo_md_contenido
+
+        with open(str(current_file), "w", encoding="utf-8") as f:
+            f.write(nuevo_contenido)
+        print(f"Archivo '{archivo_md}' formateado y guardado en '{current_file}'.")
 
 def mostrar_version():
     """Muestra la versión del sistema."""
@@ -343,6 +370,20 @@ def main():
         description='Muestra la versión actual del sistema y detalles de configuración'
     )
 
+    # Comando para agregar una bitacora formateada
+    format_file = subparsers.add_parser(
+        'formatear',
+        help='Agregar una bitacora formateada',
+        description='Este comando permitirá agregar una bitácora con formato específico (en desarrollo)'
+    )
+    format_file.add_argument(
+        '-f', '--file',
+        help='Archivo de bitácora a formatear',
+        metavar='ARCHIVO',
+        type=str,
+        required=True
+    )
+
     args = parser.parse_args()
 
     if args.comando == 'crear':
@@ -359,6 +400,8 @@ def main():
         crear_directorio()
     elif args.comando == 'version':
         mostrar_version()
+    elif args.comando == 'formatear':
+        formatear_archivo(args.file)
     elif args.comando is None:
         parser.print_help()
     else:
