@@ -228,7 +228,7 @@ def formatear_archivo(archivo_md: str):
             return
 
         # Extraer título
-        titulo = lineas[0].lstrip("#").strip()
+        titulo = lineas[0].strip()
 
         # Procesar contenido
         with open(archivo_md, 'r', encoding='utf-8') as f:
