@@ -247,6 +247,21 @@ def mostrar_version():
     print(f"Directorio de bitácoras: {configuracion['log_directory']}")
     print(f"Formato de fecha: {configuracion['date_format']}")
 
+def fecha_actual():
+    return datetime.now().strftime("%d-%m-%Y")
+
+def crear_commit(message: str | None):
+    current_log_directory = cargar_configuracion()['log_directory']
+
+    current_directory_executable = Path.cwd()
+
+    if (message is None):
+        message = fecha_actual()
+
+    if (current_directory_executable):
+        import subprocess
+        subprocess.run(["git", "commit", "-am", message], check=True)
+
 def main():
     plantillas = cargar_plantillas()
 
@@ -384,6 +399,21 @@ def main():
         required=True
     )
 
+    # Comando crear un commit dinámico
+    commit_parser = subparsers.add_parser(
+        'commit',
+        help='Crear un commit',
+        description='Crear un commit de forma dinámica'
+    )
+    commit_parser.add_argument(
+        '-m', '--mensaje',
+        help='Agregar un mensaje opcional',
+        metavar='MENSAJE',
+        default=None,
+        type=str,
+        nargs='?'
+    )
+
     args = parser.parse_args()
 
     if args.comando == 'crear':
@@ -402,6 +432,8 @@ def main():
         mostrar_version()
     elif args.comando == 'formatear':
         formatear_archivo(args.file)
+    elif args.comando == 'commit':
+        crear_commit(args.mensaje)
     elif args.comando is None:
         parser.print_help()
     else:
