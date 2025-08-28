@@ -3,13 +3,19 @@
 # Script: ver_fechas.sh
 # Descripción: Muestra información detallada sobre la fecha y hora actual
 # Uso: ./ver_fechas.sh
-# Versión: 1.3
+# Versión: 1.4
 
 # Mapeo de meses en inglés
 declare -A meses_en=(
   ["01"]="January" ["02"]="February" ["03"]="March" ["04"]="April"
   ["05"]="May" ["06"]="June" ["07"]="July" ["08"]="August"
   ["09"]="September" ["10"]="October" ["11"]="November" ["12"]="December"
+)
+
+# Mapeo de días en inglés
+declare -A dias_en=(
+  ["lunes"]="Monday" ["martes"]="Tuesday" ["miércoles"]="Wednesday"
+  ["jueves"]="Thursday" ["viernes"]="Friday" ["sábado"]="Saturday" ["domingo"]="Sunday"
 )
 
 # Obtener fecha y hora actual
@@ -21,9 +27,10 @@ anio_completo=$(date +"%Y")
 mes_numero=$(date +"%m")
 dia_numero=$(date +"%d")
 semana_anio=$(date +"%V")
-dia_semana_espanol=$(date +"%A")
-mes_espanol=$(date +"%B")            # Mes en español (según locale del sistema)
-mes_ingles=${meses_en[$mes_numero]}  # Mes en inglés (mapeo manual)
+dia_semana_es=$(date +"%A")          # Día en español
+mes_es=$(date +"%B")                 # Mes en español
+mes_en=${meses_en[$mes_numero]}      # Mes en inglés
+dia_semana_en=${dias_en[$dia_semana_es]}  # Día en inglés
 hora_actual=$(date +"%H:%M")
 
 # Mostrar información
@@ -33,10 +40,10 @@ echo "Fecha corta (DD-MM-AAAA): $fecha_actual"
 echo "Fecha ISO (AAAAMMDD): $fecha_iso"
 echo "Fecha ISO extendida (AAAA-MM-DD): $fecha_iso_ext"
 echo "Día del mes: $dia_numero"
-echo "Mes: $mes_espanol ($mes_numero) / $mes_ingles"
+echo "Mes: $mes_es ($mes_numero) / $mes_en"
 echo "Año: $anio_completo (abreviado: $anio_abreviado)"
 echo "Semana del año: $semana_anio"
-echo "Día de la semana: $dia_semana_espanol"
+echo "Día de la semana: $dia_semana_es / $dia_semana_en"
 echo "Hora actual: $hora_actual"
 echo "----------------------------------"
-echo "Fecha completa: $dia_semana_espanol, $dia_numero de $mes_espanol ($mes_ingles) de $anio_completo"
+echo "Fecha completa: $dia_semana_es ($dia_semana_en), $dia_numero de $mes_es ($mes_en) de $anio_completo"
