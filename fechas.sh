@@ -3,7 +3,7 @@
 # Script: ver_fechas.sh
 # Descripción: Muestra información detallada sobre la fecha y hora actual
 # Uso: ./ver_fechas.sh
-# Versión: 1.0
+# Versión: 1.1
 
 # Mapeo de meses
 declare -A meses=(
@@ -14,6 +14,7 @@ declare -A meses=(
 
 # Obtener fecha y hora actual
 fecha_actual=$(date +"%d-%m-%Y")
+fecha_iso=$(date +"%Y%m%d")   # Formato ISO solicitado
 anio_abreviado=$(date +"%y")
 anio_completo=$(date +"%Y")
 mes_numero=$(date +"%m")
@@ -29,6 +30,7 @@ mes_actual=${meses[$mes_numero]}
 echo "Información de fecha y hora actual:"
 echo "----------------------------------"
 echo "Fecha corta (DD-MM-AAAA): $fecha_actual"
+echo "Fecha ISO (AAAAMMDD): $fecha_iso"
 echo "Día del mes: $dia_numero"
 echo "Mes: $mes_actual ($mes_numero)"
 echo "Año: $anio_completo (abreviado: $anio_abreviado)"
