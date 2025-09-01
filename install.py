@@ -28,7 +28,7 @@ def load_config():
                 "log_config_directory": CONFIGURATION_DIRECTORY,
                 "log_config_file": CONFIG_FILE_PATH,
                 "user_executable_path": USER_EXECUTABLE_PATH,
-                "WORK_SPACE_DIRECTORY": WORK_SPACE_DIRECTORY,
+                "work_space_directory": WORK_SPACE_DIRECTORY,
             },
             "dates": {
                 "date_format": "%Y-%m-%d",
