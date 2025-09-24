@@ -34,10 +34,16 @@ def md_to_pdf(md_file: str):
 
     # CSS genérico estilo Google Docs
     css = """
+    h1 {text-align:start}
+
+    h2 {text-align:center}
+
+    table, th, td {border: 1px solid black;}
+
     body {
         font-family: Arial, sans-serif;
         line-height: 1.6;
-        margin: 2cm;
+        margin: 1cm;
     }
     h1, h2, h3, h4 {
         text-align: center;
