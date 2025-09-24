@@ -34,24 +34,68 @@ def md_to_pdf(md_file: str):
 
     # CSS genérico estilo Google Docs
     css = """
-    h1 {text-align:start}
+    /* CSS estilo Google Docs genérico */
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    margin: 1cm; /* margen moderado */
+    font-size: 12pt;
+    color: #202124;
+}
 
-    h2 {text-align:center}
+h1, h2, h3, h4 {
+    text-align: center;
+    font-weight: bold;
+    margin-top: 1.2em;
+    margin-bottom: 0.6em;
+}
 
-    table, th, td {border: 1px solid black;}
+h1 { font-size: 20pt; }
+h2 { font-size: 16pt; }
+h3 { font-size: 14pt; }
+h4 { font-size: 12pt; }
 
-    body {
-        font-family: Arial, sans-serif;
-        line-height: 1.6;
-        margin: 1cm;
-    }
-    h1, h2, h3, h4 {
-        text-align: center;
-        font-weight: bold;
-    }
-    p {
-        text-align: justify;
-    }
+p {
+    text-align: justify;
+    margin: 0.6em 0;
+}
+
+ul, ol {
+    margin: 0.6em 0 0.6em 2em;
+}
+
+table {
+    border-collapse: collapse;
+    margin: 1em auto;
+    width: 90%;
+    font-size: 11pt;
+}
+
+th, td {
+    border: 1px solid #444;
+    padding: 6px 10px;
+    text-align: left;
+}
+
+th {
+    background-color: #f1f3f4;
+    font-weight: bold;
+}
+
+blockquote {
+    border-left: 4px solid #ccc;
+    padding-left: 1em;
+    margin: 1em 0;
+    color: #555;
+    font-style: italic;
+}
+
+code {
+    font-family: Consolas, monospace;
+    background: #f5f5f5;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
     """
 
     pdf.add_section(Section(text, paper_size="A4"), user_css=css)
