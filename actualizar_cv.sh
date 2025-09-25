@@ -55,6 +55,7 @@ detect_language() {
   local file="$1"
   local filename=$(basename "$file")
 
+  # BUG: solo detecta ES o IN
   if echo "$filename" | grep -E -q "ES|es|Español|español"; then
     echo "es"
   elif echo "$filename" | grep -E -q "IN|in|EN|en|English|english"; then
