@@ -1,0 +1,39 @@
+# Entornos virtuales
+venv/
+.env/
+.venv/
+
+# Archivos de Python compilados
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Archivos de dependencias de build
+*.egg-info/
+*.egg
+.eggs/
+dist/
+build/
+
+# PyInstaller
+*.spec
+
+# Archivos temporales
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de editor/IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# Archivos de prueba
+test.pdf
+test.md
