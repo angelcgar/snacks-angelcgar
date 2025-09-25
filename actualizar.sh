@@ -41,6 +41,14 @@ EXCLUDE_PKGS=(
 # Generar la cadena de exclusión para pacman
 EXCLUDE_STRING=$(printf " --ignore %s" "${EXCLUDE_PKGS[@]}")
 
+# Mostrar los paquetes que se excluirán
+echo "==================================================="
+echo "Excluyendo los siguientes paquetes de la actualización:"
+for pkg in "${EXCLUDE_PKGS[@]}"; do
+    echo " - $pkg"
+done
+echo "==================================================="
+
 # echo $EXCLUDE_STRING
 
 # Ejecutar actualización con exclusión de paquetes pesados
