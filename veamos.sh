@@ -78,6 +78,17 @@ EOF
   echo "Todo listo para programar"
 }
 
+funcion_helper_2() {
+  local nombre_proyecto=${1:-$NOMBRE_PROYECTO}
+  primera_funcion "$nombre_proyecto"
+
+  echo "donde estamos?"
+  pwd
+
+  pnpm add --save-dev --save-exact @biomejs/biome
+  pnpm biome init
+}
+
 show_help() {
   echo "Uso: $0 [opciones]"
 }
