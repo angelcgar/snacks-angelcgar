@@ -1,0 +1,47 @@
+#!/usr/bin/fish
+
+# Función para verificar conexión a internet
+function check_internet
+    echo "🔍 Verificando conexión a internet..."
+    if ping -c 1 google.com >/dev/null 2>&1
+        echo "✅ Conexión activa."
+    else
+        echo "❌ Sin conexión."
+    end
+end
+
+# Saludo personalizado
+function saludar
+    set nombre (whoami)
+    set hora (date +%H)
+    if test $hora -lt 12
+        echo "¡Buenos días, $nombre! 🐟"
+    else if test $hora -lt 18
+        echo "¡Buenas tardes, $nombre! 🌞"
+    else
+        echo "¡Buenas noches, $nombre! 🌙"
+    end
+end
+
+# Backup de un archivo
+function hacer_backup
+    echo "📂 Ingresa la ruta del archivo para backup:"
+    read -P "> " archivo
+    if test -f "$archivo"
+        set fecha (date +%Y%m%d_%H%M%S)
+        cp -v "$archivo" "$archivo.bak_$fecha"
+        echo "✅ Backup creado: $archivo.bak_$fecha"
+    else
+        echo "❌ El archivo '$archivo' no existe."
+    end
+end
+
+# --- Ejecución principal ---
+clear
+saludar
+echo "\n📋 Contenido del directorio actual:"
+ls -l --color=auto
+echo ""
+check_internet
+echo ""
+hacer_backup
