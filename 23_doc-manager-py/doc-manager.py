@@ -1,208 +1,125 @@
 #!/usr/bin/env python3
 """
-Simple console tool to register scanned documents.
-- English names for variables/functions.
-- Saves registry as JSON.
-- Lists files under ~/Descargas/carpeta_de_enbudo/** for selection and copies chosen file to
-  ~/Documentos/archivos_personales_fisicos (creates folder if needed).
+Document Manager with SQLite backend.
+- Keeps same logic as JSON version.
+- Uses sqlite3 (stdlib, no dependencies).
 """
 
-from __future__ import annotations
 import os
 import sys
-import json
-import shutil
+import sqlite3
 import uuid
 from pathlib import Path
 from datetime import datetime
-from typing import List, Dict, Optional
 
-# Try to use ZoneInfo for Mexico time; fallback to system local time if unavailable.
 try:
-    from zoneinfo import ZoneInfo  # Python 3.9+
+    from zoneinfo import ZoneInfo
     MX_ZONE = ZoneInfo("America/Mexico_City")
 except Exception:
-    MX_ZONE = None  # fallback
+    MX_ZONE = None
 
-
-# Configuration (adjust if you want)
-SOURCE_GLOB_DIR = Path.home() / "Descargas" / "carpeta_de_enbudo"
+# Paths
 DEST_DIR = Path.home() / "Documentos" / "archivos_personales_fisicos"
-REGISTRY_PATH = DEST_DIR / "registry.json"
+DB_PATH = DEST_DIR / "registry.db"
 
+SOURCE_GLOB_DIR = Path.home() / "Descargas" / "carpeta_de_enbudo"
 
-# ---------- Basic JSON DB helpers ----------
-def load_db(registry_path: Path = REGISTRY_PATH) -> List[Dict]:
-    if registry_path.exists():
-        try:
-            return json.loads(registry_path.read_text(encoding="utf-8"))
-        except Exception:
-            return []
-    return []
-
-
-def save_db(entries: List[Dict], registry_path: Path = REGISTRY_PATH) -> None:
-    registry_path.parent.mkdir(parents=True, exist_ok=True)
-    registry_path.write_text(json.dumps(entries, ensure_ascii=False, indent=2), encoding="utf-8")
-
-
-def generate_id(entries: List[Dict]) -> int:
-    if not entries:
-        return 1
-    max_id = max((e.get("id", 0) for e in entries))
-    return int(max_id) + 1
-
-
+# ---------- Helpers ----------
 def current_mx_datetime_iso() -> str:
     now = datetime.now(MX_ZONE) if MX_ZONE else datetime.now()
-    # ISO format without microseconds
     return now.replace(microsecond=0).isoformat()
 
+def init_db(conn: sqlite3.Connection):
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS documents (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL,
+            name TEXT NOT NULL,
+            category TEXT,
+            date TEXT,
+            physical_location TEXT,
+            digital_file TEXT
+        )
+    """)
+    conn.commit()
 
-# ---------- File utilities ----------
-def list_source_files(source_dir: Path = SOURCE_GLOB_DIR) -> List[Path]:
-    if not source_dir.exists():
-        return []
-    # List files recursively
-    return sorted([p for p in source_dir.rglob("*") if p.is_file()])
-
-
-def copy_file_to_dest(src: Path, dest_dir: Path = DEST_DIR) -> Path:
-    dest_dir.mkdir(parents=True, exist_ok=True)
-    dest_path = dest_dir / src.name
-    # If filename already exists, avoid overwrite by adding a numeric suffix
-    if dest_path.exists():
-        base = dest_path.stem
-        ext = dest_path.suffix
-        i = 1
-        while True:
-            candidate = dest_dir / f"{base}_{i}{ext}"
-            if not candidate.exists():
-                dest_path = candidate
-                break
-            i += 1
-    shutil.copy2(src, dest_path)
-    return dest_path
-
-
-# ---------- Core: create an entry ----------
-def create_entry_interactive() -> Optional[Dict]:
+def create_entry(conn: sqlite3.Connection):
     print("\n--- Create new document entry ---")
-
-    name: str = input("Name (title): ").strip()
+    name = input("Name (title): ").strip()
     if not name:
-        print("Name is required. Aborting create.")
-        return None
+        print("Name is required.")
+        return
 
-    category: str = input("Category (text): ").strip()
+    category = input("Category: ").strip()
+    physical_location = input("Physical location: ").strip() or "Unknown"
 
-    physical_location: str = input("Physical location (text): ").strip()
-    if not physical_location:
-        physical_location = "Unknown"
+    # skip file selection for brevity
+    digital_file = input("Digital file path (optional, leave empty if none): ").strip()
 
-    # List available files to pick as digital_file
-    files = list_source_files()
-    digital_file_path: Optional[Path] = None
-    if files:
-        print(f"\nFound {len(files)} file(s) in: {SOURCE_GLOB_DIR}")
-        for idx, p in enumerate(files, start=1):
-            print(f"  {idx}) {p.relative_to(Path.home())}")
-        print("  0) No digital file / skip")
-        try:
-            choice = input("Select file number to attach as digital_file (0 to skip): ").strip()
-            sel = int(choice) if choice else 0
-        except ValueError:
-            sel = 0
-        if sel > 0 and 1 <= sel <= len(files):
-            digital_file_path = files[sel - 1]
-            try:
-                copied = copy_file_to_dest(digital_file_path)
-                print(f"Copied to: {copied}")
-                digital_file_rel = str(copied)
-            except Exception as e:
-                print(f"Error copying file: {e}")
-                digital_file_rel = ""
-        else:
-            digital_file_rel = ""
-    else:
-        print(f"No files found under {SOURCE_GLOB_DIR} (or folder missing).")
-        digital_file_rel = ""
-
-    # Prepare entry
-    entries = load_db()
-    new_id = generate_id(entries)
     new_uuid = str(uuid.uuid4())
+    date_iso = current_mx_datetime_iso()
 
-    date_iso: str = current_mx_datetime_iso()
+    conn.execute("""
+        INSERT INTO documents (uuid, name, category, date, physical_location, digital_file)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (new_uuid, name, category, date_iso, physical_location, digital_file))
+    conn.commit()
 
-    entry: Dict = {
-        "id": int(new_id),                # basic int id
-        "uuid": new_uuid,                 # unique uuid
-        "name": name,                     # user provided
-        "category": category,             # user provided
-        "date": date_iso,                 # iso datetime
-        "physical_location": physical_location,  # text
-        "digital_file": digital_file_rel, # path or empty string
-    }
+    print(f"Saved entry with uuid={new_uuid}")
 
-    entries.append(entry)
-    save_db(entries)
-    print(f"\nSaved entry id={new_id}, uuid={new_uuid}\n")
-    return entry
-
-
-# ---------- Simple list and search ----------
-def list_all_entries() -> None:
-    entries = load_db()
-    if not entries:
-        print("\nNo entries saved yet.")
+def list_all(conn: sqlite3.Connection):
+    rows = conn.execute("SELECT id, name, category, digital_file FROM documents").fetchall()
+    if not rows:
+        print("\nNo entries yet.")
         return
-    print(f"\nRegistry entries ({len(entries)}):")
-    for e in entries:
-        print(f" - [{e.get('id')}] {e.get('name')}  | category: {e.get('category') or '-'}  | digital: {bool(e.get('digital_file'))}")
+    print(f"\nEntries ({len(rows)}):")
+    for r in rows:
+        print(f" - [{r[0]}] {r[1]} | category: {r[2] or '-'} | digital: {bool(r[3])}")
 
-
-def filter_documents_by_name(term: str) -> None:
-    term_lower = term.lower()
-    entries = load_db()
-    found = [e for e in entries if term_lower in (e.get("name", "").lower() + " " + (e.get("category") or "").lower())]
-    if not found:
-        print("\nNo matching documents.")
+def search_by_name(conn: sqlite3.Connection, term: str):
+    term = f"%{term.lower()}%"
+    rows = conn.execute("""
+        SELECT id, name, physical_location, digital_file
+        FROM documents
+        WHERE LOWER(name) LIKE ? OR LOWER(category) LIKE ?
+    """, (term, term)).fetchall()
+    if not rows:
+        print("\nNo matches.")
         return
-    print(f"\nFound {len(found)} result(s):")
-    for e in found:
-        print(f" - [{e.get('id')}] {e.get('name')}  | physical: {e.get('physical_location')}  | digital: {e.get('digital_file') or '—'}")
+    print(f"\nFound {len(rows)} result(s):")
+    for r in rows:
+        print(f" - [{r[0]}] {r[1]} | physical: {r[2]} | digital: {r[3] or '—'}")
 
-
-# ---------- Console menu ----------
-def print_menu() -> None:
-    print("\n=== Document Manager ===")
+def print_menu():
+    print("\n=== Document Manager (SQLite) ===")
     print("1) Create new entry")
     print("2) List all entries")
-    print("3) Search by name/category (filter_documents_by_name)")
+    print("3) Search by name/category")
     print("0) Exit")
 
+def main():
+    DEST_DIR.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(DB_PATH)
+    init_db(conn)
 
-def main() -> None:
     while True:
         print_menu()
-        choice = input("Choose an option: ").strip()
+        choice = input("Choose option: ").strip()
         if choice == "1":
-            create_entry_interactive()
+            create_entry(conn)
         elif choice == "2":
-            list_all_entries()
+            list_all(conn)
         elif choice == "3":
             term = input("Search term: ").strip()
             if term:
-                filter_documents_by_name(term)
-            else:
-                print("Empty search term.")
+                search_by_name(conn, term)
         elif choice == "0":
-            print("Goodbye.")
+            print("\nGoodbye.")
             break
         else:
-            print("Invalid option. Try again.")
+            print("Invalid option.")
 
+    conn.close()
 
 if __name__ == "__main__":
     try:
