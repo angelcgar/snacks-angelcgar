@@ -91,6 +91,9 @@ copy_cv() {
 
 # Muestra ayuda
 show_help() {
+  echo "ESTE SCRIPT ESTA EN DESUSO, NO USAR"
+  echo "VER -> 25_actualizar-cv-py"
+  echo ""
   echo "📋 Uso: $0 <archivo.pdf>"
   echo ""
   echo "Organiza CVs por tecnología e idioma:"

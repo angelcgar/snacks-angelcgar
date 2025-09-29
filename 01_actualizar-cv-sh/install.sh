@@ -38,6 +38,9 @@ if cp "$script_name" "$install_dir/$nombre_programa"; then
   chmod +x "$install_dir/$nombre_programa"
   echo "Instalación completada exitosamente."
   echo "Puedes ejecutar el programa con: $nombre_programa"
+  echo ""
+  echo "ESTE SCRIPT ESTA EN DESUSO, NO USAR"
+  echo "VER -> 25_actualizar-cv-py"
 else
   echo "Error: No se pudo instalar $nombre_programa"
   exit 1
