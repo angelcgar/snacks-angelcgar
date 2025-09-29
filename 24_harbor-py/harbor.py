@@ -6,11 +6,11 @@ import subprocess
 
 # Mapeo de imágenes comunes y sus puertos por defecto
 IMAGE_PORTS = {
-    "mysql": "3306:3306",
-    "postgres": "5432:5432",
-    "mongo": "27017:27017",
-    "redis": "6379:6379",
-    "mariadb": "3307:3306"
+    "mysql": 3306,
+    "postgres": 5432,
+    "mongo": 27017,
+    "redis": 6379,
+    "mariadb": 3307
 }
 
 def create_project(project_name, image, version):
@@ -30,41 +30,62 @@ def create_project(project_name, image, version):
     if not description:
         description = "No description"
 
-    # --- Determinar puerto ---
-    if image in IMAGE_PORTS:
-        port_mapping = IMAGE_PORTS[image]
-    else:
-        port_input = input(f"👉 No conozco la imagen '{image}'. Ingresa un puerto (ej. 1234:1234): ").strip()
-        port_mapping = port_input if port_input else "8080:8080"
-
     # --- Crear carpeta ---
     project_dir = f"contenedor_{project_name}"
     os.makedirs(project_dir, exist_ok=True)
 
-    # --- Contenido del docker-compose.yml ---
+    # --- Variables base ---
+    root_password = "123456789"
+    db_name = f"{project_name}_db"
+    container_name = f"{project_name}_container"
+    volume_name = f"{project_name}_data"
+
+    if image in IMAGE_PORTS:
+        port = IMAGE_PORTS[image]
+    else:
+        try:
+            port = int(input(f"👉 Ingresa el puerto a mapear para {image}: ").strip())
+        except ValueError:
+            raise SystemExit("❌ Debes ingresar un número de puerto válido")
+
+    # --- docker-compose.yml ---
     compose_content = f"""version: "3.9"
 services:
   db:
     image: {image}:{version}
-    container_name: {project_name}_container
+    container_name: {container_name}
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: 123456789
-      MYSQL_DATABASE: {project_name}_db
-      MYSQL_USER: {system_user}
-      MYSQL_PASSWORD: {user_password}
+      {"MYSQL_ROOT_PASSWORD" if image=="mysql" else "POSTGRES_PASSWORD" if image=="postgres" else "MONGO_INITDB_ROOT_PASSWORD"}: {root_password}
+      {"MYSQL_DATABASE" if image=="mysql" else "POSTGRES_DB" if image=="postgres" else "MONGO_INITDB_DATABASE"}: {db_name}
+      {"MYSQL_USER" if image=="mysql" else "POSTGRES_USER" if image=="postgres" else "MONGO_INITDB_ROOT_USERNAME"}: {system_user}
+      {"MYSQL_PASSWORD" if image=="mysql" else "POSTGRES_PASSWORD" if image=="postgres" else "MONGO_INITDB_ROOT_PASSWORD"}: {user_password}
     ports:
-      - "{port_mapping}"
+      - "{port}:{port}"
     volumes:
-      - {project_name}_data:/var/lib/mysql
-
+      - {volume_name}:/var/lib/{image}
 volumes:
-  {project_name}_data:
+  {volume_name}:
+    name: {volume_name}
 """
 
     compose_path = os.path.join(project_dir, "docker-compose.yml")
     with open(compose_path, "w") as f:
         f.write(compose_content)
+
+    # --- URLs de conexión ---
+    connection_urls = {}
+    if image == "mysql":
+        connection_urls["root"] = f"mysql://root:{root_password}@localhost:{port}/{db_name}"
+        connection_urls["user"] = f"mysql://{system_user}:{user_password}@localhost:{port}/{db_name}"
+    elif image == "postgres":
+        connection_urls["root"] = f"postgresql://postgres:{root_password}@localhost:{port}/{db_name}"
+        connection_urls["user"] = f"postgresql://{system_user}:{user_password}@localhost:{port}/{db_name}"
+    elif image == "mongo":
+        connection_urls["root"] = f"mongodb://root:{root_password}@localhost:{port}/{db_name}"
+        connection_urls["user"] = f"mongodb://{system_user}:{user_password}@localhost:{port}/{db_name}"
+    else:
+        connection_urls["info"] = f"{image} no soportado aún para URLs automáticas."
 
     # --- Guardar info en JSON ---
     info = {
@@ -73,12 +94,13 @@ volumes:
         "version": version,
         "system_user": system_user,
         "user_password": user_password,
-        "root_password": "123456789",
-        "database": f"{project_name}_db",
+        "root_password": root_password,
+        "database": db_name,
         "description": description,
-        "volume": f"{project_name}_data",
-        "container_name": f"{project_name}_container",
-        "ports": port_mapping
+        "volume": volume_name,
+        "container_name": container_name,
+        "port": port,
+        "connection_urls": connection_urls
     }
 
     info_path = os.path.join(project_dir, f"{project_name}_info.json")
