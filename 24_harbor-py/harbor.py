@@ -117,6 +117,67 @@ volumes:
     except subprocess.CalledProcessError as e:
         print(f"❌ Error al levantar el contenedor: {e}")
 
+    # --- Crear archivo seed.sql ---
+    seed_path = os.path.join(project_dir, "seed.sql")
+    seed_content = """-- ======================================================
+-- SEED.SQL – Archivo de ejemplo para pruebas y demos
+-- Aquí puedes escribir tus queries iniciales.
+-- Este archivo NO se ejecuta automáticamente por Docker.
+-- ======================================================
+
+-- =====================
+-- POSTGRESQL EJEMPLO
+-- =====================
+-- CREATE TABLE users (
+--     id SERIAL PRIMARY KEY,
+--     username TEXT NOT NULL,
+--     created_at TIMESTAMP DEFAULT NOW()
+-- );
+--
+-- INSERT INTO users (username) VALUES ('alice'), ('bob');
+
+
+
+-- =====================
+-- MYSQL EJEMPLO
+-- =====================
+-- CREATE TABLE users (
+--     id INT AUTO_INCREMENT PRIMARY KEY,
+--     username VARCHAR(50) NOT NULL,
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- );
+--
+-- INSERT INTO users (username) VALUES ('alice'), ('bob');
+
+
+
+-- =====================
+-- SQLITE EJEMPLO
+-- =====================
+-- CREATE TABLE users (
+--     id INTEGER PRIMARY KEY AUTOINCREMENT,
+--     username TEXT NOT NULL,
+--     created_at TEXT DEFAULT CURRENT_TIMESTAMP
+-- );
+--
+-- INSERT INTO users (username) VALUES ('alice'), ('bob');
+
+-- ======================================================
+-- NOTA:
+-- - Para usar este archivo, copia el bloque que necesites
+--   y ejecútalo con el cliente SQL correspondiente.
+-- - Ejemplo en Postgres:
+--   docker exec -i <container> psql -U <user> -d <db> -f /path/seed.sql
+-- - Ejemplo en MySQL:
+--   docker exec -i <container> mysql -u <user> -p<password> <db> < seed.sql
+-- ======================================================
+"""
+    with open(seed_path, "w") as f:
+        f.write(seed_content)
+
+    print(f"📝 Archivo seed.sql creado en {seed_path}")
+
+
 def get_up(project_name):
     project_dir = f"contenedor_{project_name}"
     compose_path = os.path.join(project_dir, "docker-compose.yml")
