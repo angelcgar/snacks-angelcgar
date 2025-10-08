@@ -3,7 +3,7 @@ import argparse
 import os
 import subprocess
 import sys
-
+from PIL import Image
 
 def construir_comando(file: str, salida: str, metadata_all: bool, lossless: bool, to_jpg: bool, resize_twelve: bool):
     """Construye el comando de conversión"""
@@ -22,7 +22,11 @@ def construir_comando(file: str, salida: str, metadata_all: bool, lossless: bool
 
         # Resize si aplica
         if resize_twelve:
-            comando.extend(["-resize", "12", "12"])
+            with Image.open(file) as img:
+                width, height = img.size
+            new_width = width // 12
+            new_height = height // 12
+            comando.extend(["-resize", str(new_width), str(new_height)])
 
         return [comando, ["dwebp", "temp.webp", "-o", salida]]
 
@@ -41,7 +45,11 @@ def construir_comando(file: str, salida: str, metadata_all: bool, lossless: bool
 
         # Resize si aplica
         if resize_twelve:
-            comando.extend(["-resize", "12", "12"])
+            with Image.open(file) as img:
+                width, height = img.size
+            new_width = width // 12
+            new_height = height // 12
+            comando.extend(["-resize", str(new_width), str(new_height)])
 
         comando.extend([file, "-o", salida])
         return [comando]
