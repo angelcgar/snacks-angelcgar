@@ -8,6 +8,7 @@ import os
 import shutil
 import sys
 import re
+import argparse
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -15,7 +16,7 @@ from typing import Dict, Optional
 class CVOrganizer:
     """Organizador de CVs por tecnología e idioma."""
 
-    def __init__(self, base_dir: str = None, name_prefix: str = "AngelContreras_Resumen"):
+    def __init__(self, base_dir: str | None = None, name_prefix: str = "AngelContreras_Resumen"):
         """
         Inicializa el organizador de CVs.
 
@@ -41,7 +42,7 @@ class CVOrganizer:
         # Patrones de idiomas mejorados
         self.language_patterns: Dict[str, str] = {
             "es": r"ES|es|Español|español|ESP|esp",
-            "en": r"IN|in|EN|en|English|english|ING|ing"  # Corregido: 'en' en lugar de 'in'
+            "en": r"IN|in|EN|en|English|english|ING|ing"
         }
 
     def check_pdf_file(self, file_path: str) -> Path:
@@ -112,6 +113,34 @@ class CVOrganizer:
         print("💡 Usa 'ES', 'EN', 'español', 'english', etc. en el nombre del archivo.")
         sys.exit(1)
 
+    def archive_file(self, source_file: Path) -> None:
+        """
+        Archiva el archivo original moviéndolo a ~/Documentos/archivos.
+
+        Args:
+            source_file: Archivo fuente a archivar
+        """
+        archive_dir = Path(os.path.expanduser("~/Dev/freelancer/programming/CVs/frontend"))
+        archive_dir.mkdir(parents=True, exist_ok=True)
+
+        archive_path = archive_dir / source_file.name
+
+        # Si ya existe un archivo con el mismo nombre, añadir contador
+        counter = 1
+        original_archive_path = archive_path
+        while archive_path.exists():
+            stem = original_archive_path.stem
+            suffix = original_archive_path.suffix
+            archive_path = archive_dir / f"{stem}_{counter}{suffix}"
+            counter += 1
+
+        try:
+            shutil.move(str(source_file), str(archive_path))
+            print(f"📦 Archivo archivado en: {archive_path}")
+        except Exception as e:
+            print(f"❌ Error al archivar el archivo: {e}")
+            sys.exit(1)
+
     def copy_cv(self, source_file: Path, technology: str, language: str) -> None:
         """
         Copia el CV al directorio correspondiente.
@@ -143,11 +172,14 @@ class CVOrganizer:
 
     def show_help(self) -> None:
         """Muestra la ayuda del programa."""
-        print("📋 Uso: python cv_organizer.py <archivo.pdf>")
+        print("📋 Uso: python cv_organizer.py <archivo.pdf> [--archivar]")
         print("")
         print("Organiza CVs por tecnología e idioma:")
         print(f"  - Tecnologías detectadas: {', '.join(self.tech_patterns.keys())}")
         print("  - Idiomas: es (español), en (inglés)")
+        print("")
+        print("Opciones:")
+        print("  --archivar    Mueve el archivo original a ~/Documentos/archivos")
         print("")
         print("Ejemplos de nombres:")
         print("  - CV_React_ES.pdf → ~/Documentos/CVs/react/es/")
@@ -162,12 +194,13 @@ class CVOrganizer:
         for lang, pattern in self.language_patterns.items():
             print(f"  - {lang}: {pattern}")
 
-    def process_cv(self, file_path: str) -> None:
+    def process_cv(self, file_path: str, archive: bool = False) -> None:
         """
         Procesa un CV: lo analiza y lo organiza.
 
         Args:
             file_path: Ruta del archivo CV a procesar
+            archive: Si True, archiva el archivo original después del procesamiento
         """
         # Verificar archivo
         cv_file = self.check_pdf_file(file_path)
@@ -185,18 +218,47 @@ class CVOrganizer:
         # Copiar archivo
         self.copy_cv(cv_file, technology, language)
 
+        # Archivar si se solicita
+        if archive:
+            print("")
+            self.archive_file(cv_file)
+
 
 def main() -> None:
     """Función principal del programa."""
-    # Verificar argumentos
-    if len(sys.argv) != 2 or sys.argv[1] in ['-h', '--help', 'help']:
+    parser = argparse.ArgumentParser(
+        description="Organiza CVs por tecnología e idioma",
+        add_help=False
+    )
+
+    parser.add_argument('archivo', nargs='?', help='Archivo PDF a procesar')
+    parser.add_argument('--archivar', action='store_true',
+                       help='Mueve el archivo original a ~/Documentos/archivos')
+    parser.add_argument('-h', '--help', action='store_true',
+                       help='Muestra esta ayuda')
+
+    # Manejo especial para mostrar ayuda personalizada
+    if len(sys.argv) == 1 or (len(sys.argv) == 2 and sys.argv[1] in ['-h', '--help', 'help']):
         organizer = CVOrganizer()
         organizer.show_help()
-        sys.exit(0 if len(sys.argv) == 2 else 1)
+        sys.exit(0)
+
+    args = parser.parse_args()
+
+    if args.help:
+        organizer = CVOrganizer()
+        organizer.show_help()
+        sys.exit(0)
+
+    if not args.archivo:
+        print("❌ Error: Debes especificar un archivo PDF.")
+        organizer = CVOrganizer()
+        organizer.show_help()
+        sys.exit(1)
 
     # Procesar CV
     organizer = CVOrganizer()
-    organizer.process_cv(sys.argv[1])
+    organizer.process_cv(args.archivo, args.archivar)
 
 
 if __name__ == "__main__":
