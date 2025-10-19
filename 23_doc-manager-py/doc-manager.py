@@ -257,20 +257,30 @@ def delete_entry(conn: sqlite3.Connection):
 
 
 # ---------- Menu ----------
-def print_menu():
-    print(" Document Manager (SQLite) ".center(80, "="))
+def print_menu_root():
+    print(" Document Manager (ROOT) ".center(80, "="))
+    print("0) Documents")
+    print("1) Categories")
+    print("9) Exit")
+
+def print_menu_docs():
+    print(" Documents ".center(80, "="))
     print("1) Create new document")
     print("2) List all documents")
     print("3) Search documents")
     print("4) Update document")
     print("5) Delete document")
-    print("--- Categories ---")
-    print("6) List categories")
-    print("7) Create category")
-    print("8) Update category")
-    print("9) Delete category")
-    print("0) Exit")
+    print("0) Back")
+    print("9) Exit")
 
+def print_menu_cats():
+    print(" Categories ".center(80, "="))
+    print("1) List categories")
+    print("2) Create category")
+    print("3) Update category")
+    print("4) Delete category")
+    print("0) Back")
+    print("9) Exit")
 
 def main():
     DEST_DIR.mkdir(parents=True, exist_ok=True)
@@ -278,35 +288,42 @@ def main():
     init_db(conn)
 
     while True:
-        print_menu()
-        choice = input("Choose: ").strip()
-        if choice == "1":
-            create_entry(conn)
-        elif choice == "2":
-            list_all(conn)
-        elif choice == "3":
-            term = input("Search term: ").strip()
-            if term:
-                search_by_name(conn, term)
-        elif choice == "4":
-            update_entry(conn)
-        elif choice == "5":
-            delete_entry(conn)
-        elif choice == "6":
-            for c in list_categories(conn):
-                print(f"[{c[0]}] {c[1]}")
-        elif choice == "7":
-            create_category(conn)
-        elif choice == "8":
-            update_category(conn)
-        elif choice == "9":
-            delete_category(conn)
-        elif choice == "0":
+        print_menu_root()
+        root = input("Choose: ").strip()
+
+        if root == "0":  # --- DOCUMENTS submenu ---
+            while True:
+                print_menu_docs()
+                c = input("Choose: ").strip()
+                if c == "1": create_entry(conn)
+                elif c == "2": list_all(conn)
+                elif c == "3":
+                    term = input("Search term: ").strip()
+                    if term: search_by_name(conn, term)
+                elif c == "4": update_entry(conn)
+                elif c == "5": delete_entry(conn)
+                elif c == "0": break       # back to root
+                elif c == "9": sys.exit(0) # exit full
+                else: print("Invalid option.")
+
+        elif root == "1":  # --- CATEGORIES submenu ---
+            while True:
+                print_menu_cats()
+                c = input("Choose: ").strip()
+                if c == "1":
+                    for cat in list_categories(conn): print(f"[{cat[0]}] {cat[1]}")
+                elif c == "2": create_category(conn)
+                elif c == "3": update_category(conn)
+                elif c == "4": delete_category(conn)
+                elif c == "0": break
+                elif c == "9": sys.exit(0)
+                else: print("Invalid option.")
+
+        elif root == "9":
             break
         else:
             print("Invalid option.")
 
-    conn.close()
 
 
 if __name__ == "__main__":
