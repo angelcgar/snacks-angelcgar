@@ -96,7 +96,7 @@ if [ $# -eq 1 ]; then
     fi
 else
     # Obtener fecha en formato JavaScript con milisegundos y Z
-    fecha_js_sistema=$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")
+    fecha_js_sistema=$(date +"%Y-%m-%dT%H:%M:%S.%3N")Z
     echo "Procesando fecha JavaScript: $fecha_js_sistema"
     usar_fecha_actual
     fuente_fecha="sistema"
