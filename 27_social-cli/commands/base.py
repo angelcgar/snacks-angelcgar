@@ -1,19 +1,22 @@
 from abc import ABC, abstractmethod
 
-class BaseCommand(ABC):
-    """Clase base para todos los comandos"""
+class SocialPlatform(ABC):
+    """Clase base para todas las plataformas sociales"""
 
-    def __init__(self, subparsers, command_name, help_text):
-        self.command_name = command_name
-        self.parser = subparsers.add_parser(command_name, help=help_text)
-        self._add_arguments()
+    def __init__(self, name):
+        self.name = name
 
     @abstractmethod
-    def _add_arguments(self):
-        """Añadir argumentos específicos del comando"""
+    def post_text(self, content, **kwargs):
+        """Publicar texto en la plataforma"""
         pass
 
     @abstractmethod
-    def handle(self, args):
-        """Ejecutar la lógica del comando"""
+    def post_image(self, image_path, caption="", **kwargs):
+        """Publicar imagen en la plataforma"""
+        pass
+
+    @abstractmethod
+    def validate_content(self, content, **kwargs):
+        """Validar contenido antes de publicar"""
         pass
