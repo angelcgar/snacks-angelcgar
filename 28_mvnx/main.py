@@ -45,6 +45,29 @@ def test():
     """Ejecuta las pruebas del proyecto Maven (equivale a 'mvn test')."""
     show_banner()
     console.print("[magenta]Ejecutando pruebas...[/magenta]\n")
+    subprocess.run(["mvn", "test"])
+
+@app.command()
+def create(
+    group_id: str = typer.Argument(..., help="Group ID del proyecto, ej. com.gm"),
+    project_name: str = typer.Argument(..., help="Nombre del proyecto (artifactId)")
+):
+    """Crea un nuevo proyecto Maven con Java 23."""
+    show_banner()
+    console.print(f"[green]Creando proyecto Maven:[/green] {project_name}")
+    console.print(f"[cyan]Group ID:[/cyan] {group_id}\n")
+
+    subprocess.run([
+        "mvn", "archetype:generate",
+        f"-DgroupId={group_id}",
+        f"-DartifactId={project_name}",
+        "-DarchetypeArtifactId=maven-archetype-quickstart",
+        "-DinteractiveMode=false",
+        "-Dmaven.compiler.source=23",
+        "-Dmaven.compiler.target=23"
+    ])
+
+    console.print(f"\n[bold green]✓[/bold green] Proyecto '{project_name}' creado exitosamente")
 
 # ---- Punto de entrada ----
 if __name__ == "__main__":
