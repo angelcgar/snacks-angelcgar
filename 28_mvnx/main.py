@@ -69,6 +69,21 @@ def create(
 
     console.print(f"\n[bold green]✓[/bold green] Proyecto '{project_name}' creado exitosamente")
 
+# Comandos comunes de Maven
+@app.command()
+def install():
+    """Instala el artefacto en el repositorio local."""
+    show_banner()
+    console.print("[cyan]Instalando artefacto localmente...[/cyan]\n")
+    subprocess.run(["mvn", "install"])
+
+@app.command()
+def package():
+    """Empaqueta el proyecto en un .jar (equivale a 'mvn package')."""
+    show_banner()
+    console.print("[green]Empaquetando proyecto...[/green]\n")
+    subprocess.run(["mvn", "package"])
+
 # ---- Punto de entrada ----
 if __name__ == "__main__":
     app()
