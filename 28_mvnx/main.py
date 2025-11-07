@@ -3,6 +3,8 @@
 import subprocess
 import typer
 import os
+import glob
+from pathlib import Path
 from rich.console import Console
 from rich.panel import Panel
 
@@ -23,6 +25,45 @@ def main(
 # ---- Banner inicial ----
 def show_banner():
     console.print(Panel.fit("[bold blue]mvnx[/bold blue] — Maven CLI mejorado\n[dim]Por Angel Contreras[/dim]"))
+
+# ---- Función auxiliar para buscar clases Java ----
+def find_java_class(class_name: str) -> str:
+    """Busca un archivo Java por nombre y devuelve el nombre completo de la clase."""
+    try:
+        # Buscar archivos .java que coincidan con el nombre
+        result = subprocess.run(
+            ["find", ".", "-name", f"{class_name}.java", "-type", "f"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+
+        files = result.stdout.strip().split('\n')
+        files = [f for f in files if f]  # Filtrar líneas vacías
+
+        if not files:
+            console.print(f"[bold red]❌ No se encontró ninguna clase con ese nombre[/bold red]")
+            raise typer.Exit(1)
+
+        # Tomar el primer archivo encontrado
+        java_file = files[0]
+
+        # Convertir path a nombre de clase Java
+        # Ejemplo: ./src/main/java/com/gm/App.java -> com.gm.App
+        class_path = java_file.replace("./", "").replace(".java", "")
+
+        # Remover src/main/java del path si está presente
+        if "src/main/java/" in class_path:
+            class_path = class_path.replace("src/main/java/", "")
+
+        # Convertir separadores de directorio a puntos
+        class_path = class_path.replace("/", ".")
+
+        return class_path
+
+    except subprocess.CalledProcessError:
+        console.print(f"[bold red]❌ No se encontró ninguna clase con ese nombre[/bold red]")
+        raise typer.Exit(1)
 
 # ---- Función de verificación de pom.xml ----
 def check_pom():
@@ -132,6 +173,45 @@ def status():
     subprocess.run(["mvn", "-v"])
     console.print("\n[cyan]Versión de Java:[/cyan]")
     subprocess.run(["java", "-version"])
+
+# ---- Alias de comandos (versiones cortas) ----
+@app.command("c")
+def build_alias():
+    """Alias para 'build': Compila el proyecto Maven."""
+    build()
+
+@app.command("r")
+def run_alias(class_name: str = typer.Argument(..., help="Nombre de la clase a ejecutar, ej. App")):
+    """Alias para 'run': Ejecuta una clase principal buscándola automáticamente."""
+    check_pom()
+
+    # Buscar y obtener el nombre completo de la clase
+    full_class_name = find_java_class(class_name)
+
+    # Ejecutar la clase encontrada
+    show_banner()
+    console.print(f"[cyan]Ejecutando clase:[/cyan] {full_class_name}\n")
+    run_maven_command(["mvn", "exec:java", f"-Dexec.mainClass={full_class_name}"])
+
+@app.command("t")
+def test_alias():
+    """Alias para 'test': Ejecuta las pruebas del proyecto."""
+    test()
+
+@app.command("cl")
+def clean_alias():
+    """Alias para 'clean': Limpia el proyecto Maven."""
+    clean()
+
+@app.command("p")
+def package_alias():
+    """Alias para 'package': Empaqueta el proyecto en un JAR."""
+    package()
+
+@app.command("i")
+def install_alias():
+    """Alias para 'install': Instala el artefacto en el repositorio local."""
+    install()
 
 
 # ---- Punto de entrada ----
