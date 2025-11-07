@@ -68,14 +68,14 @@ def build():
     show_banner()
     console.print("[green]Compilando proyecto...[/green]\n")
     run_maven_command(["mvn", "compile"])
-
+# BUG: Este comando no muestra la info del proyecto
 @app.command()
 def info():
     """Muestra información básica del proyecto Maven."""
     check_pom()
     show_banner()
     run_maven_command(["mvn", "help:effective-pom"])
-
+# Comando por probar
 @app.command()
 def test():
     """Ejecuta las pruebas del proyecto Maven (equivale a 'mvn test')."""
@@ -123,6 +123,16 @@ def package():
     show_banner()
     console.print("[green]Empaquetando proyecto...[/green]\n")
     run_maven_command(["mvn", "package"])
+
+@app.command()
+def status():
+    """Muestra versiones y entorno Maven/Java."""
+    show_banner()
+    console.print("[cyan]Versión de Maven:[/cyan]")
+    subprocess.run(["mvn", "-v"])
+    console.print("\n[cyan]Versión de Java:[/cyan]")
+    subprocess.run(["java", "-version"])
+
 
 # ---- Punto de entrada ----
 if __name__ == "__main__":
