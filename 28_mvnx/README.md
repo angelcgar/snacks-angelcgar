@@ -1,6 +1,6 @@
 # mvnx
 
-Un **CLI mejorado para Maven**, hecho en Python con
+Maven Extended. Un **CLI mejorado para Maven**, hecho en Python con
 [Typer](https://typer.tiangolo.com/) y [Rich](https://rich.readthedocs.io/).
 Diseñado para simplificar comandos comunes de Maven y ofrecer una experiencia
 más limpia, rápida y moderna desde la terminal.
