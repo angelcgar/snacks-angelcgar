@@ -1,0 +1,58 @@
+# =========================================
+# Python
+# =========================================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+ENV/
+
+# Archivos de configuración temporales
+*.log
+*.pot
+*.pyproj
+*.idea/
+*.vscode/
+*.swp
+*.swo
+
+# Configuración local de usuario
+*.env
+.env.*
+!.env.example
+
+# =========================================
+# PyInstaller
+# =========================================
+# Carpetas creadas por PyInstaller
+build/
+dist/
+# Archivos de especificación
+*.spec
+
+# =========================================
+# Dependencias / paquetes
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+.wheels/
+*.manifest
+*.spec
+
+# =========================================
+# Sistema y OS
+# =========================================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================================
+# Archivos ejecutables generados
+# =========================================
+mvnx
+mvnx.exe
+mvnx.bin
