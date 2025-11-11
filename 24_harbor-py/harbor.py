@@ -4,6 +4,7 @@ import os
 import json
 import subprocess
 from typing import Optional
+from pathlib import Path
 
 import typer
 from rich.console import Console
@@ -19,6 +20,9 @@ app = typer.Typer(
     add_completion=False
 )
 console = Console()
+
+# Ruta global para los contenedores organizados
+HARBOR_VOLUMES_DIR = Path.home() / "Documentos" / "harbor_volumenes"
 
 # Mapeo de imágenes comunes y sus puertos por defecto
 IMAGE_PORTS = {
@@ -211,11 +215,12 @@ def create_project(
     user_password = get_user_input("Ingresa la contraseña para el usuario", "password")
     description = get_user_input("Ingresa una descripción opcional", "No description")
 
-    # Crear directorio del proyecto
-    project_dir = f"contenedor_{project_name}"
-    os.makedirs(project_dir, exist_ok=True)
+    # Crear directorio de Harbor si no existe
+    HARBOR_VOLUMES_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Variables del proyecto
+    # Crear directorio del proyecto dentro de harbor_volumenes
+    project_dir = HARBOR_VOLUMES_DIR / f"contenedor_{project_name}"
+    project_dir.mkdir(parents=True, exist_ok=True)    # Variables del proyecto
     root_password = "123456789"
     db_name = f"{project_name}_db"
     container_name = f"{project_name}_container"
@@ -317,10 +322,10 @@ def start_project(
     """🚀 Levantar un proyecto existente con docker-compose."""
     show_banner()
 
-    project_dir = f"contenedor_{project_name}"
-    compose_path = os.path.join(project_dir, "docker-compose.yml")
+    project_dir = HARBOR_VOLUMES_DIR / f"contenedor_{project_name}"
+    compose_path = project_dir / "docker-compose.yml"
 
-    if not os.path.exists(compose_path):
+    if not compose_path.exists():
         console.print(f"[bold red]❌ No se encontró {compose_path}[/bold red]")
         console.print("¿Creaste el proyecto antes con [cyan]harbor new[/cyan]?")
         raise typer.Exit(1)
@@ -328,9 +333,9 @@ def start_project(
     console.print(f"[cyan]Levantando proyecto:[/cyan] [bold]{project_name}[/bold]")
 
     try:
-        with console.status("[bold green]Iniciando contenedor...") as status:
+        with console.status("[bold green]Iniciando contenedor..."):
             subprocess.run(
-                ["docker", "compose", "-f", compose_path, "up", "-d"],
+                ["docker", "compose", "-f", str(compose_path), "up", "-d"],
                 check=True,
                 capture_output=True
             )
@@ -339,6 +344,73 @@ def start_project(
 
     except subprocess.CalledProcessError as e:
         console.print(f"[bold red]❌ Error al levantar el proyecto: {e}[/bold red]")
+        raise typer.Exit(1)
+
+@app.command("list")
+def list_containers():
+    """📋 Listar todos los contenedores de Docker con información detallada."""
+    show_banner()
+
+    console.print("[bold blue]📋 Estado de contenedores Docker[/bold blue]\n")
+
+    try:
+        # Obtener contenedores activos con información detallada
+        result = subprocess.run([
+            "docker", "ps", "--format",
+            "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}\t{{.CreatedAt}}"
+        ], capture_output=True, text=True, check=True)
+
+        if result.stdout.strip():
+            console.print("[bold green]🟢 Contenedores activos:[/bold green]")
+            console.print(result.stdout)
+        else:
+            console.print("[yellow]ℹ️ No hay contenedores activos en este momento[/yellow]")
+
+        # Obtener todos los contenedores (incluidos los detenidos)
+        all_result = subprocess.run([
+            "docker", "ps", "-a", "--format",
+            "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}\t{{.CreatedAt}}"
+        ], capture_output=True, text=True, check=True)
+
+        # Contar contenedores detenidos
+        all_containers = all_result.stdout.strip().split('\n')[1:]  # Quitar header
+        active_containers = result.stdout.strip().split('\n')[1:] if result.stdout.strip() else []
+
+        stopped_count = len(all_containers) - len(active_containers)
+
+        if stopped_count > 0:
+            console.print(f"\n[dim]🔴 {stopped_count} contenedor(es) detenido(s)[/dim]")
+
+        # Mostrar información de proyectos Harbor
+        console.print(f"\n[bold cyan]📁 Proyectos Harbor en {HARBOR_VOLUMES_DIR}:[/bold cyan]")
+
+        if HARBOR_VOLUMES_DIR.exists():
+            harbor_projects = [d for d in HARBOR_VOLUMES_DIR.iterdir()
+                             if d.is_dir() and d.name.startswith('contenedor_')]
+
+            if harbor_projects:
+                table = Table(show_header=True, header_style="bold blue")
+                table.add_column("🚀 Proyecto", style="cyan", no_wrap=True)
+                table.add_column("📁 Directorio", style="green")
+                table.add_column("📄 Compose", style="yellow")
+
+                for project in harbor_projects:
+                    project_name = project.name.replace('contenedor_', '')
+                    compose_exists = "✅" if (project / "docker-compose.yml").exists() else "❌"
+                    table.add_row(project_name, str(project.name), compose_exists)
+
+                console.print(table)
+            else:
+                console.print("[dim]No hay proyectos Harbor creados aún[/dim]")
+        else:
+            console.print("[dim]Directorio Harbor no encontrado[/dim]")
+
+    except subprocess.CalledProcessError as e:
+        console.print(f"[bold red]❌ Error al listar contenedores: {e}[/bold red]")
+        console.print("[dim]¿Está Docker ejecutándose?[/dim]")
+        raise typer.Exit(1)
+    except FileNotFoundError:
+        console.print("[bold red]❌ Docker no está instalado o no está en PATH[/bold red]")
         raise typer.Exit(1)
 
 @app.command("clean")
@@ -354,7 +426,7 @@ def clean_all():
 
     try:
         # Detener todos los contenedores en ejecución
-        with console.status("[bold yellow]Deteniendo contenedores...") as status:
+        with console.status("[bold yellow]Deteniendo contenedores..."):
             running = subprocess.run(
                 ["docker", "ps", "-q"],
                 capture_output=True,
@@ -373,7 +445,7 @@ def clean_all():
                 console.print("ℹ️ No había contenedores en ejecución")
 
         # Eliminar todos los contenedores
-        with console.status("[bold red]Eliminando contenedores...") as status:
+        with console.status("[bold red]Eliminando contenedores..."):
             all_containers = subprocess.run(
                 ["docker", "ps", "-aq"],
                 capture_output=True,

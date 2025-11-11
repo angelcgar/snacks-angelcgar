@@ -38,6 +38,40 @@ def install_dependencies():
     print("✅ Dependencias instaladas correctamente")
     return True
 
+def create_harbor_directory():
+    """Crea el directorio harbor_volumenes en Documentos."""
+    print("\n📁 Creando directorio de trabajo Harbor...")
+
+    harbor_dir = Path.home() / "Documentos" / "harbor_volumenes"
+
+    try:
+        harbor_dir.mkdir(parents=True, exist_ok=True)
+        print(f"✅ Directorio creado: {harbor_dir}")
+
+        # Crear archivo README en el directorio
+        readme_content = """# Harbor Volumenes
+
+Este directorio contiene todos los proyectos de bases de datos creados con Harbor CLI.
+
+Cada proyecto tiene su propia carpeta con:
+- docker-compose.yml
+- archivo de configuración JSON
+- seed.sql con ejemplos
+
+No elimines este directorio manualmente. Usa 'harbor clean' para gestión.
+"""
+
+        readme_path = harbor_dir / "README.md"
+        with open(readme_path, "w") as f:
+            f.write(readme_content)
+
+        print(f"📝 README creado en {readme_path}")
+        return True
+
+    except Exception as e:
+        print(f"❌ Error al crear directorio Harbor: {e}")
+        return False
+
 def build_executable():
     """Ejecuta PyInstaller para crear el ejecutable."""
     print("\n🔨 Construyendo ejecutable con PyInstaller...")
@@ -131,17 +165,22 @@ def main():
         print("\n❌ Error al instalar dependencias. Abortando instalación.")
         sys.exit(1)
 
-    # Paso 3: Construir ejecutable
+    # Paso 3: Crear directorio Harbor
+    if not create_harbor_directory():
+        print("\n❌ Error al crear directorio Harbor. Abortando instalación.")
+        sys.exit(1)
+
+    # Paso 4: Construir ejecutable
     if not build_executable():
         print("\n❌ La construcción del ejecutable falló. Abortando instalación.")
         sys.exit(1)
 
-    # Paso 4: Establecer permisos
+    # Paso 5: Establecer permisos
     if not set_executable_permissions():
         print("\n❌ Error al establecer permisos. Abortando instalación.")
         sys.exit(1)
 
-    # Paso 5: Instalar en ~/.local/bin/
+    # Paso 6: Instalar en ~/.local/bin/
     if not install_to_user_bin():
         print("\n❌ Error en la instalación final. Abortando.")
         sys.exit(1)
@@ -149,6 +188,7 @@ def main():
     print("\n🎯 ¡Harbor está listo para usar!")
     print("   Prueba ejecutando: harbor --help")
     print("   Crea tu primer contenedor: harbor new mi-db --image postgres")
+    print("   Lista contenedores: harbor list")
 
 if __name__ == "__main__":
     main()
