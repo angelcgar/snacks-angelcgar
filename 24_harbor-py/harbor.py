@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""
+Harbor CLI - Administrador de bases de datos temporales con Docker
+
+Un CLI moderno para crear y gestionar contenedores de bases de datos
+de forma rápida y organizada para desarrollo y testing.
+"""
 
 import os
 import json
@@ -13,7 +19,14 @@ from rich.prompt import Prompt, Confirm
 from rich.table import Table
 from rich.progress import track
 
-# Configuración inicial
+# =============================================================================
+# CONFIGURACIÓN GLOBAL
+# =============================================================================
+
+# Información de la aplicación
+__version__ = "2.0.0"
+
+# Configuración principal del CLI
 app = typer.Typer(
     name="harbor",
     help="🐳 CLI para administrar bases de datos temporales con Docker",
@@ -21,10 +34,10 @@ app = typer.Typer(
 )
 console = Console()
 
-# Ruta global para los contenedores organizados
+# Directorio centralizado donde se almacenan todos los proyectos
 HARBOR_VOLUMES_DIR = Path.home() / "Documentos" / "harbor_volumenes"
 
-# Mapeo de imágenes comunes y sus puertos por defecto
+# Mapeo de puertos estándar para imágenes populares
 IMAGE_PORTS = {
     "mysql": 3306,
     "postgres": 5432,
@@ -33,8 +46,12 @@ IMAGE_PORTS = {
     "mariadb": 3307
 }
 
+# =============================================================================
+# FUNCIONES UTILITARIAS SIMPLES
+# =============================================================================
+
 def show_banner():
-    """Muestra el banner principal de Harbor."""
+    """Muestra el banner visual principal de Harbor con Rich."""
     console.print(Panel.fit(
         "[bold blue]🐳 Harbor[/bold blue] — Docker DB Manager\n"
         "[dim]Administrador de bases de datos temporales[/dim]",
@@ -42,19 +59,23 @@ def show_banner():
     ))
 
 def get_system_user() -> str:
-    """Obtiene el usuario del sistema."""
+    """Obtiene el nombre del usuario actual del sistema operativo."""
     try:
         return os.getlogin()
     except Exception:
-        return "joedoe"
+        return "joedoe"  # Fallback por si falla getlogin()
 
-def get_user_input(prompt_text: str, default: str = None) -> str:
-    """Obtiene entrada del usuario con Rich prompt."""
+def get_user_input(prompt_text: str, default: Optional[str] = None) -> str:
+    """Solicita entrada del usuario con Rich prompt y valor por defecto."""
     if default:
         result = Prompt.ask(f"👉 {prompt_text}", default=default)
     else:
         result = Prompt.ask(f"👉 {prompt_text}")
     return result.strip()
+
+# =============================================================================
+# FUNCIONES DE GENERACIÓN DE CONTENIDO
+# =============================================================================
 
 def create_docker_compose_content(
     image: str,
@@ -67,9 +88,14 @@ def create_docker_compose_content(
     port: int,
     volume_name: str
 ) -> str:
-    """Genera el contenido del docker-compose.yml."""
+    """
+    Genera el contenido del archivo docker-compose.yml basado en la imagen seleccionada.
 
-    # Configuración específica por imagen
+    Configura automáticamente las variables de entorno específicas para cada tipo
+    de base de datos (MySQL, PostgreSQL, MongoDB) con los puertos y credenciales correctos.
+    """
+
+    # Configuración de variables de entorno por tipo de imagen
     env_config = {
         "mysql": {
             "root_pass": "MYSQL_ROOT_PASSWORD",
@@ -91,6 +117,7 @@ def create_docker_compose_content(
         }
     }
 
+    # Usar configuración específica o generar nombres para imágenes no estándar
     env_vars = env_config.get(image, {
         "root_pass": f"{image.upper()}_ROOT_PASSWORD",
         "db": f"{image.upper()}_DATABASE",
@@ -119,9 +146,26 @@ volumes:
 """
 
 def get_connection_urls(image: str, system_user: str, user_password: str, root_password: str, port: int, db_name: str) -> dict:
-    """Genera las URLs de conexión según el tipo de imagen."""
+    """
+    Genera URLs de conexión listas para usar según el tipo de imagen de base de datos.
+
+    Crea cadenas de conexión estándar para clientes SQL populares como DBeaver,
+    pgAdmin, MySQL Workbench, etc. Incluye tanto credenciales root como de usuario.
+
+    Args:
+        image: Tipo de imagen (mysql, postgres, mongo, etc.)
+        system_user: Nombre del usuario del sistema
+        user_password: Contraseña del usuario personalizado
+        root_password: Contraseña del usuario root/admin
+        port: Puerto donde escucha la base de datos
+        db_name: Nombre de la base de datos creada
+
+    Returns:
+        dict: URLs de conexión categorizadas por tipo de usuario
+    """
     urls = {}
 
+    # Generar URLs específicas para cada tipo de base de datos
     if image == "mysql":
         urls["root"] = f"mysql://root:{root_password}@localhost:{port}/{db_name}"
         urls["user"] = f"mysql://{system_user}:{user_password}@localhost:{port}/{db_name}"
@@ -136,8 +180,19 @@ def get_connection_urls(image: str, system_user: str, user_password: str, root_p
 
     return urls
 
-def create_seed_file(project_dir: str):
-    """Crea el archivo seed.sql con ejemplos."""
+def create_seed_file(project_dir) -> str:
+    """
+    Crea el archivo seed.sql con ejemplos para diferentes bases de datos.
+
+    Genera un archivo con plantillas SQL comentadas para PostgreSQL, MySQL y SQLite
+    que el desarrollador puede usar como punto de partida para sus datos de prueba.
+
+    Args:
+        project_dir: Ruta del directorio del proyecto (str o Path)
+
+    Returns:
+        str: Ruta completa al archivo seed.sql creado
+    """
     seed_content = """-- ======================================================
 -- SEED.SQL – Archivo de ejemplo para pruebas y demos
 -- Aquí puedes escribir tus queries iniciales.
@@ -192,11 +247,33 @@ def create_seed_file(project_dir: str):
 -- ======================================================
 """
 
-    seed_path = os.path.join(project_dir, "seed.sql")
+    seed_path = Path(project_dir) / "seed.sql"
     with open(seed_path, "w") as f:
         f.write(seed_content)
 
-    return seed_path
+    return str(seed_path)# =============================================================================
+# CALLBACK GLOBAL Y COMANDOS PRINCIPALES
+# =============================================================================
+
+@app.callback()
+def version_callback(
+    version: bool = typer.Option(
+        False,
+        "--version",
+        "-v",
+        help="Mostrar la versión de Harbor CLI"
+    )
+):
+    """
+    Callback global que maneja la flag de versión.
+
+    Se ejecuta antes que cualquier comando y permite mostrar la versión
+    del CLI cuando se usa --version o -v.
+    """
+    if version:
+        console.print(f"[bold blue]🐳 Harbor CLI[/bold blue] versión [green]{__version__}[/green]")
+        console.print("[dim]Administrador de bases de datos temporales con Docker[/dim]")
+        raise typer.Exit()
 
 @app.command("new")
 def create_project(
@@ -204,7 +281,15 @@ def create_project(
     image: str = typer.Option(..., "--image", help="Nombre de la imagen en Docker Hub (ej: mysql)"),
     version: str = typer.Option("latest", "--version-image", help="Versión de la imagen")
 ):
-    """🚀 Crear un nuevo contenedor de base de datos con docker-compose."""
+    """
+    Crear un nuevo contenedor de base de datos con docker-compose.
+
+    Genera automáticamente:
+    - docker-compose.yml configurado
+    - Archivo JSON con credenciales y URLs de conexión
+    - seed.sql con ejemplos para testing
+    - Levanta el contenedor en segundo plano
+    """
     show_banner()
 
     console.print(f"\n[bold green]Creando proyecto:[/bold green] [cyan]{project_name}[/cyan]")
@@ -319,12 +404,19 @@ def create_project(
 def start_project(
     project_name: str = typer.Argument(..., help="Nombre del proyecto a levantar")
 ):
-    """🚀 Levantar un proyecto existente con docker-compose."""
+    """
+    Levantar un proyecto existente con docker-compose.
+
+    Busca el proyecto en la carpeta harbor_volumenes y ejecuta 'docker-compose up -d'
+    para iniciarlo en segundo plano. Valida que existan los archivos necesarios.
+    """
     show_banner()
 
+    # Construir ruta al proyecto en el directorio centralizado
     project_dir = HARBOR_VOLUMES_DIR / f"contenedor_{project_name}"
     compose_path = project_dir / "docker-compose.yml"
 
+    # Verificar que el proyecto existe
     if not compose_path.exists():
         console.print(f"[bold red]❌ No se encontró {compose_path}[/bold red]")
         console.print("¿Creaste el proyecto antes con [cyan]harbor new[/cyan]?")
@@ -348,13 +440,21 @@ def start_project(
 
 @app.command("list")
 def list_containers():
-    """📋 Listar todos los contenedores de Docker con información detallada."""
+    """
+    Listar todos los contenedores Docker con información detallada.
+
+    Muestra:
+    - Contenedores activos con tabla formateada (nombres, imagen, estado, puertos)
+    - Contador de contenedores detenidos
+    - Lista específica de proyectos Harbor creados
+    - Estado de archivos docker-compose.yml por proyecto
+    """
     show_banner()
 
     console.print("[bold blue]📋 Estado de contenedores Docker[/bold blue]\n")
 
     try:
-        # Obtener contenedores activos con información detallada
+        # Obtener información detallada de contenedores activos
         result = subprocess.run([
             "docker", "ps", "--format",
             "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}\t{{.CreatedAt}}"
@@ -415,9 +515,19 @@ def list_containers():
 
 @app.command("clean")
 def clean_all():
-    """🧹 Detener y eliminar todos los contenedores."""
+    """
+    Detener y eliminar todos los contenedores Docker del sistema.
+
+    Operación destructiva que:
+    1. Solicita confirmación al usuario
+    2. Detiene todos los contenedores activos
+    3. Elimina todos los contenedores (activos + detenidos)
+
+    ⚠️ ADVERTENCIA: Esta acción no se puede deshacer
+    """
     show_banner()
 
+    # Solicitar confirmación antes de proceder con la operación destructiva
     if not Confirm.ask("🗑️ ¿Estás seguro de que quieres detener y eliminar TODOS los contenedores?"):
         console.print("[yellow]Operación cancelada[/yellow]")
         raise typer.Exit()
@@ -469,8 +579,17 @@ def clean_all():
         console.print(f"[bold red]❌ Error al limpiar contenedores: {e}[/bold red]")
         raise typer.Exit(1)
 
+# =============================================================================
+# PUNTO DE ENTRADA PRINCIPAL
+# =============================================================================
+
 def main():
-    """Punto de entrada principal."""
+    """
+    Función principal que inicializa la aplicación Harbor CLI.
+
+    Punto de entrada que lanza Typer con todos los comandos registrados
+    y maneja la configuración global de la aplicación.
+    """
     app()
 
 if __name__ == "__main__":
