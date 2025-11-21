@@ -73,6 +73,67 @@ def get_user_input(prompt_text: str, default: Optional[str] = None) -> str:
         result = Prompt.ask(f"👉 {prompt_text}")
     return result.strip()
 
+# Fix: Revisa el commit 21-11-25_10:30, donde se añadió esta función.
+def check_port_conflict(port: int) -> bool:
+    """
+    Verifica si un puerto está siendo usado por Docker.
+
+    Args:
+        port: Puerto a verificar
+
+    Returns:
+        bool: True si hay conflicto, False si está libre
+    """
+    try:
+        result = subprocess.run([
+            "docker", "ps", "--format", "{{.Ports}}"
+        ], capture_output=True, text=True, check=True)
+
+        # Buscar el puerto en la lista de puertos usados
+        for line in result.stdout.strip().split('\n'):
+            if f":{port}->" in line or f"{port}/tcp" in line:
+                return True
+        return False
+
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        # Si no se puede verificar, asumir que está libre
+        return False
+
+def get_available_port(base_port: int, image: str) -> int:
+    """
+    Encuentra un puerto disponible basado en un puerto base.
+
+    Args:
+        base_port: Puerto preferido a verificar
+        image: Tipo de imagen para mostrar información
+
+    Returns:
+        int: Puerto disponible
+    """
+    current_port = base_port
+
+    # Verificar puerto base
+    if not check_port_conflict(current_port):
+        return current_port
+
+    console.print(f"[yellow]⚠️ Puerto {base_port} ya está en uso[/yellow]")
+
+    # Buscar puerto alternativo (incrementar de 1 en 1 hasta encontrar uno libre)
+    for i in range(1, 100):  # Buscar en un rango razonable
+        test_port = base_port + i
+        if not check_port_conflict(test_port):
+            console.print(f"[green]✅ Usando puerto alternativo: {test_port}[/green]")
+            return test_port
+
+    # Si no encuentra uno libre, preguntar al usuario
+    console.print(f"[red]❌ No se encontró puerto libre automáticamente[/red]")
+    port_input = get_user_input(f"Ingresa un puerto manual para {image}")
+    try:
+        return int(port_input)
+    except ValueError:
+        console.print("[bold red]❌ Puerto inválido[/bold red]")
+        raise typer.Exit(1)
+
 # =============================================================================
 # FUNCIONES DE GENERACIÓN DE CONTENIDO
 # =============================================================================
@@ -305,16 +366,18 @@ def create_project(
 
     # Crear directorio del proyecto dentro de harbor_volumenes
     project_dir = HARBOR_VOLUMES_DIR / f"contenedor_{project_name}"
-    project_dir.mkdir(parents=True, exist_ok=True)    # Variables del proyecto
+    project_dir.mkdir(parents=True, exist_ok=True)
+
+    # Variables del proyecto
     root_password = "123456789"
     db_name = f"{project_name}_db"
     container_name = f"{project_name}_container"
     volume_name = f"{project_name}_data"
 
-    # Determinar puerto
+    # Determinar puerto con detección de conflictos
     if image in IMAGE_PORTS:
-        port = IMAGE_PORTS[image]
-        console.print(f"[dim]Usando puerto predeterminado: {port}[/dim]")
+        base_port = IMAGE_PORTS[image]
+        port = get_available_port(base_port, image)
     else:
         port_input = get_user_input(f"Ingresa el puerto a mapear para {image}")
         try:
@@ -339,7 +402,7 @@ def create_project(
                 db_name, system_user, user_password, port, volume_name
             )
 
-            compose_path = os.path.join(project_dir, "docker-compose.yml")
+            compose_path = project_dir / "docker-compose.yml"
             with open(compose_path, "w") as f:
                 f.write(compose_content)
 
@@ -362,7 +425,7 @@ def create_project(
                 "connection_urls": connection_urls
             }
 
-            info_path = os.path.join(project_dir, f"{project_name}_info.json")
+            info_path = project_dir / f"{project_name}_info.json"
             with open(info_path, "w") as f:
                 json.dump(info, f, indent=4)
 
@@ -373,7 +436,7 @@ def create_project(
             # Levantar contenedor
             try:
                 subprocess.run(
-                    ["docker", "compose", "-f", compose_path, "up", "-d"],
+                    ["docker", "compose", "-f", str(compose_path), "up", "-d"],
                     check=True,
                     capture_output=True
                 )
@@ -389,12 +452,12 @@ def create_project(
     table.add_column("Campo", style="cyan", no_wrap=True)
     table.add_column("Valor", style="green")
 
-    table.add_row("📁 Directorio", project_dir)
+    table.add_row("📁 Directorio", str(project_dir))
     table.add_row("🐳 Imagen", f"{image}:{version}")
     table.add_row("📦 Contenedor", container_name)
     table.add_row("🔌 Puerto", str(port))
     table.add_row("🗄️ Base de datos", db_name)
-    table.add_row("📝 Configuración", info_path)
+    table.add_row("📝 Configuración", str(info_path))
     table.add_row("🌱 Seed file", seed_path)
 
     console.print(table)
