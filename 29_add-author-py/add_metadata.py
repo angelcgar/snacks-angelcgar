@@ -23,9 +23,14 @@ def parse_arguments() -> argparse.Namespace:
         description="Actualiza metadatos ID3 (Artist/Album) en archivos de audio",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Ejemplos:
+Ejemplos de uso:
+  # Procesar múltiples archivos con patrón
   %(prog)s --artist "Led Zeppelin" --album "IV" --pattern ".*\\.mp3$"
-  %(prog)s --artist "Pink Floyd" --album "Dark Side" --pattern "track.*\\.m4a$" --path /music
+  %(prog)s --artist "Pink Floyd" --pattern "track.*\\.m4a$" --path /music
+
+  # Procesar un solo archivo (modo debugging)
+  %(prog)s --artist "The Beatles" --album "Abbey Road" --file "song.mp3"
+  %(prog)s --artist "Queen" --file "bohemian.mp3"
         """
     )
 
@@ -39,15 +44,23 @@ Ejemplos:
     parser.add_argument(
         '--album',
         type=str,
-        required=True,
-        help='Álbum a escribir en los metadatos del archivo'
+        required=False,
+        default=None,
+        help='Álbum a escribir en los metadatos del archivo (opcional)'
     )
 
     parser.add_argument(
         '--pattern',
         type=str,
-        required=True,
+        required=False,
         help='Expresión regular para seleccionar archivos objetivo'
+    )
+
+    parser.add_argument(
+        '--file',
+        type=str,
+        required=False,
+        help='Archivo único a procesar (para debugging)'
     )
 
     parser.add_argument(
@@ -119,14 +132,14 @@ def find_matching_files(directory: str, pattern: str) -> List[Path]:
     return matching_files
 
 
-def update_file_metadata(file_path: Path, artist: str, album: str) -> bool:
+def update_file_metadata(file_path: Path, artist: str, album: Optional[str] = None) -> bool:
     """
     Actualiza los metadatos Artist y Album de un archivo usando ExifTool.
 
     Args:
         file_path: Ruta del archivo a actualizar
         artist: Valor para el campo Artist
-        album: Valor para el campo Album
+        album: Valor para el campo Album (opcional)
 
     Returns:
         bool: True si la actualización fue exitosa, False en caso contrario
@@ -135,14 +148,18 @@ def update_file_metadata(file_path: Path, artist: str, album: str) -> bool:
         # Comando ExifTool para actualizar metadatos sin modificar el nombre del archivo
         # -overwrite_original: No crear archivo de respaldo
         # -Artist: Establecer artista
-        # -Album: Establecer álbum
+        # -Album: Establecer álbum (si se proporciona)
         command = [
             'exiftool',
             '-overwrite_original',
             f'-Artist={artist}',
-            f'-Album={album}',
-            str(file_path)
         ]
+
+        # Solo agregar Album si se proporcionó
+        if album:
+            command.append(f'-Album={album}')
+
+        command.append(str(file_path))
 
         result = subprocess.run(
             command,
@@ -161,14 +178,14 @@ def update_file_metadata(file_path: Path, artist: str, album: str) -> bool:
         return False
 
 
-def process_files(files: List[Path], artist: str, album: str) -> dict:
+def process_files(files: List[Path], artist: str, album: Optional[str] = None) -> dict:
     """
     Procesa múltiples archivos y actualiza sus metadatos.
 
     Args:
         files: Lista de archivos a procesar
         artist: Valor para el campo Artist
-        album: Valor para el campo Album
+        album: Valor para el campo Album (opcional)
 
     Returns:
         dict: Estadísticas de procesamiento (success, failed, total)
@@ -196,20 +213,23 @@ def process_files(files: List[Path], artist: str, album: str) -> dict:
     return stats
 
 
-def print_summary(stats: dict, artist: str, album: str):
+def print_summary(stats: dict, artist: str, album: Optional[str] = None):
     """
     Muestra un resumen del procesamiento de archivos.
 
     Args:
         stats: Diccionario con estadísticas de procesamiento
         artist: Artista aplicado
-        album: Álbum aplicado
+        album: Álbum aplicado (opcional)
     """
     print("=" * 60)
     print("📊 RESUMEN")
     print("=" * 60)
     print(f"Artista aplicado:  {artist}")
-    print(f"Álbum aplicado:    {album}")
+    if album:
+        print(f"Álbum aplicado:    {album}")
+    else:
+        print(f"Álbum aplicado:    (no especificado)")
     print(f"\nArchivos procesados: {stats['total']}")
     print(f"  ✅ Exitosos:       {stats['success']}")
     print(f"  ❌ Fallidos:       {stats['failed']}")
@@ -223,6 +243,15 @@ def main():
     # Parsear argumentos
     args = parse_arguments()
 
+    # Validar que se proporcione --pattern o --file
+    if not args.pattern and not args.file:
+        print("❌ Error: Debes proporcionar --pattern o --file", file=sys.stderr)
+        sys.exit(1)
+
+    if args.pattern and args.file:
+        print("❌ Error: No puedes usar --pattern y --file al mismo tiempo", file=sys.stderr)
+        sys.exit(1)
+
     # Verificar que ExifTool está instalado
     if not check_exiftool_installed():
         print("❌ Error: ExifTool no está instalado o no está en PATH", file=sys.stderr)
@@ -232,7 +261,36 @@ def main():
         print("   Windows:       Descargar desde https://exiftool.org", file=sys.stderr)
         sys.exit(1)
 
-    # Buscar archivos que coincidan con el patrón
+    # Modo: archivo único (para debugging)
+    if args.file:
+        file_path = Path(args.file)
+
+        if not file_path.exists():
+            print(f"❌ Error: El archivo '{args.file}' no existe", file=sys.stderr)
+            sys.exit(1)
+
+        if not file_path.is_file():
+            print(f"❌ Error: '{args.file}' no es un archivo", file=sys.stderr)
+            sys.exit(1)
+
+        print(f"🎯 Modo debugging: procesando archivo único")
+        print(f"📝 Archivo: {file_path.name}")
+        print(f"👤 Artista: {args.artist}")
+        if args.album:
+            print(f"💿 Álbum: {args.album}")
+        print()
+
+        # Procesar archivo único
+        success = update_file_metadata(file_path, args.artist, args.album)
+
+        if success:
+            print("✅ Metadatos actualizados exitosamente")
+            sys.exit(0)
+        else:
+            print("❌ Error al actualizar metadatos")
+            sys.exit(1)
+
+    # Modo: búsqueda por patrón (modo normal)
     print(f"🔍 Buscando archivos en '{args.path}' con patrón: {args.pattern}")
     matching_files = find_matching_files(args.path, args.pattern)
 
