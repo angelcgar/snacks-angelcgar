@@ -31,6 +31,10 @@ Ejemplos de uso:
   # Procesar un solo archivo (modo debugging)
   %(prog)s --artist "The Beatles" --album "Abbey Road" --file "song.mp3"
   %(prog)s --artist "Queen" --file "bohemian.mp3"
+
+  # Usar id3v2 para archivos MP3 antiguos o de YouTube
+  %(prog)s --artist "plantasVsZombies" --pattern ".*\\.mp3$" --use-id3v2
+  %(prog)s --artist "Artist" --file "old-file.mp3" --use-id3v2
         """
     )
 
@@ -70,6 +74,12 @@ Ejemplos de uso:
         help='Directorio donde buscar archivos (por defecto: directorio actual)'
     )
 
+    parser.add_argument(
+        '--use-id3v2',
+        action='store_true',
+        help='Usar id3v2 en lugar de ExifTool (recomendado para archivos MP3 antiguos o de YouTube)'
+    )
+
     return parser.parse_args()
 
 
@@ -83,6 +93,25 @@ def check_exiftool_installed() -> bool:
     try:
         result = subprocess.run(
             ['exiftool', '-ver'],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False
+
+
+def check_id3v2_installed() -> bool:
+    """
+    Verifica si id3v2 está instalado y disponible en el sistema.
+
+    Returns:
+        bool: True si id3v2 está disponible, False en caso contrario
+    """
+    try:
+        result = subprocess.run(
+            ['id3v2', '--version'],
             capture_output=True,
             text=True,
             check=True
@@ -132,7 +161,7 @@ def find_matching_files(directory: str, pattern: str) -> List[Path]:
     return matching_files
 
 
-def update_file_metadata(file_path: Path, artist: str, album: Optional[str] = None) -> bool:
+def update_file_metadata_exiftool(file_path: Path, artist: str, album: Optional[str] = None) -> bool:
     """
     Actualiza los metadatos Artist y Album de un archivo usando ExifTool.
 
@@ -178,7 +207,71 @@ def update_file_metadata(file_path: Path, artist: str, album: Optional[str] = No
         return False
 
 
-def process_files(files: List[Path], artist: str, album: Optional[str] = None) -> dict:
+def update_file_metadata_id3v2(file_path: Path, artist: str, album: Optional[str] = None) -> bool:
+    """
+    Actualiza los metadatos Artist y Album de un archivo usando id3v2.
+
+    Args:
+        file_path: Ruta del archivo a actualizar
+        artist: Valor para el campo Artist
+        album: Valor para el campo Album (opcional)
+
+    Returns:
+        bool: True si la actualización fue exitosa, False en caso contrario
+    """
+    try:
+        # Comando id3v2 para actualizar metadatos
+        # -a: Artist (TPE1)
+        # -A: Album (TALB)
+        command = [
+            'id3v2',
+            '-a', artist,
+        ]
+
+        # Solo agregar Album si se proporcionó
+        if album:
+            command.extend(['-A', album])
+
+        command.append(str(file_path))
+
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+
+        return True
+
+    except subprocess.CalledProcessError as e:
+        print(f"⚠️  Error al actualizar '{file_path.name}': {e.stderr.strip()}", file=sys.stderr)
+        return False
+    except Exception as e:
+        print(f"⚠️  Error inesperado al procesar '{file_path.name}': {e}", file=sys.stderr)
+        return False
+
+
+def update_file_metadata(file_path: Path, artist: str, album: Optional[str] = None, use_id3v2: bool = False) -> bool:
+    """
+    Actualiza los metadatos Artist y Album de un archivo.
+    Wrapper que decide qué herramienta usar (ExifTool o id3v2).
+
+    Args:
+        file_path: Ruta del archivo a actualizar
+        artist: Valor para el campo Artist
+        album: Valor para el campo Album (opcional)
+        use_id3v2: Si True, usa id3v2; si False, usa ExifTool
+
+    Returns:
+        bool: True si la actualización fue exitosa, False en caso contrario
+    """
+    if use_id3v2:
+        return update_file_metadata_id3v2(file_path, artist, album)
+    else:
+        return update_file_metadata_exiftool(file_path, artist, album)
+
+
+def process_files(files: List[Path], artist: str, album: Optional[str] = None, use_id3v2: bool = False) -> dict:
     """
     Procesa múltiples archivos y actualiza sus metadatos.
 
@@ -186,6 +279,7 @@ def process_files(files: List[Path], artist: str, album: Optional[str] = None) -
         files: Lista de archivos a procesar
         artist: Valor para el campo Artist
         album: Valor para el campo Album (opcional)
+        use_id3v2: Si True, usa id3v2; si False, usa ExifTool
 
     Returns:
         dict: Estadísticas de procesamiento (success, failed, total)
@@ -201,7 +295,7 @@ def process_files(files: List[Path], artist: str, album: Optional[str] = None) -
     for file_path in files:
         print(f"📝 Actualizando: {file_path.name}")
 
-        if update_file_metadata(file_path, artist, album):
+        if update_file_metadata(file_path, artist, album, use_id3v2):
             stats['success'] += 1
             print(f"   ✅ Éxito")
         else:
@@ -252,14 +346,27 @@ def main():
         print("❌ Error: No puedes usar --pattern y --file al mismo tiempo", file=sys.stderr)
         sys.exit(1)
 
-    # Verificar que ExifTool está instalado
-    if not check_exiftool_installed():
-        print("❌ Error: ExifTool no está instalado o no está en PATH", file=sys.stderr)
-        print("\n💡 Instalación:", file=sys.stderr)
-        print("   Ubuntu/Debian: sudo apt-get install libimage-exiftool-perl", file=sys.stderr)
-        print("   macOS:         brew install exiftool", file=sys.stderr)
-        print("   Windows:       Descargar desde https://exiftool.org", file=sys.stderr)
-        sys.exit(1)
+    # Verificar herramienta a usar (ExifTool o id3v2)
+    if args.use_id3v2:
+        if not check_id3v2_installed():
+            print("❌ Error: id3v2 no está instalado o no está en PATH", file=sys.stderr)
+            print("\n💡 Instalación:", file=sys.stderr)
+            print("   Ubuntu/Debian: sudo apt-get install id3v2", file=sys.stderr)
+            print("   macOS:         brew install id3v2", file=sys.stderr)
+            print("   Arch Linux:    sudo pacman -S id3v2", file=sys.stderr)
+            sys.exit(1)
+        print("🔧 Usando id3v2 para actualizar metadatos\n")
+    else:
+        if not check_exiftool_installed():
+            print("❌ Error: ExifTool no está instalado o no está en PATH", file=sys.stderr)
+            print("\n💡 Instalación:", file=sys.stderr)
+            print("   Ubuntu/Debian: sudo apt-get install libimage-exiftool-perl", file=sys.stderr)
+            print("   macOS:         brew install exiftool", file=sys.stderr)
+            print("   Windows:       Descargar desde https://exiftool.org", file=sys.stderr)
+            print("\n💡 Alternativa para archivos MP3 antiguos:", file=sys.stderr)
+            print("   Usa el flag --use-id3v2", file=sys.stderr)
+            sys.exit(1)
+        print("🔧 Usando ExifTool para actualizar metadatos\n")
 
     # Modo: archivo único (para debugging)
     if args.file:
@@ -281,7 +388,7 @@ def main():
         print()
 
         # Procesar archivo único
-        success = update_file_metadata(file_path, args.artist, args.album)
+        success = update_file_metadata(file_path, args.artist, args.album, args.use_id3v2)
 
         if success:
             print("✅ Metadatos actualizados exitosamente")
@@ -302,7 +409,7 @@ def main():
     print(f"✅ Encontrados {len(matching_files)} archivo(s)")
 
     # Procesar archivos
-    stats = process_files(matching_files, args.artist, args.album)
+    stats = process_files(matching_files, args.artist, args.album, args.use_id3v2)
 
     # Mostrar resumen
     print_summary(stats, args.artist, args.album)
