@@ -1,8 +1,17 @@
 #!/bin/bash
 
 # =============================
+# YV - Gestor de Proyectos de Video
+# =============================
+# Script para crear estructura de proyectos de video con plantillas
+# y archivos de muestra automáticamente.
+# =============================
+
+# =============================
 # 📹 Plantilla de Seguimiento
 # =============================
+# Esta plantilla se genera como video_tracker.md en cada proyecto
+# Contiene secciones para documentar todo el proceso de creación del video
 VIDEO_TRACKER_TEMPLATE='
 # 📹 **Plantilla de Seguimiento: {{NOMBRE_PROYECTO}}**
 
@@ -167,19 +176,12 @@ VIDEO_TRACKER_TEMPLATE='
 
 create_project() {
   local project_name="$1"
-  shift
-  local args=("$@")
 
+  # Convertir nombre del proyecto a formato seguro para sistema de archivos
+  # - Reemplaza espacios con guiones bajos
+  # - Elimina caracteres no alfanuméricos excepto guiones bajos
   local safe_name
   safe_name=$(echo "$project_name" | tr ' ' '_' | tr -cd '[:alnum:]_')
-  local use_git=false
-
-  # Parsear flags
-  for arg in "${args[@]}"; do
-    case "$arg" in
-      --git) use_git=true ;;
-    esac
-  done
 
   echo "Creando proyecto: $project_name"
   mkdir -p "$safe_name" || {
@@ -204,12 +206,10 @@ create_project() {
     mkdir -p "$dir"
   done
 
-  # Archivos iniciales
+  # Crear archivo de proyecto Kdenlive vacío
   touch "02_edit_project/${safe_name}.kdenlive"
-  touch "02_exports/${safe_name}_v1.mp4"
-  touch "02_exports/${safe_name}_thumbnail.jpg"
 
-  touch "04_script/script_${safe_name}.md"
+  # Crear archivo de notas en el directorio de script
   echo "# Notas del proyecto" > "04_script/notes_${safe_name}.txt"
 
   # Generar video_tracker.md desde la variable global
@@ -218,50 +218,86 @@ create_project() {
     | sed "s/{{NOMBRE_PROYECTO}}/$safe_name/g" \
     > "video_tracker.md"
 
-  # README.md básico
+  # README.md básico con información del proyecto
   echo "# $project_name" > "README.md"
   echo "- Fecha: $(date '+%Y-%m-%d')" >> "README.md"
   echo "- Estado: En curso" >> "README.md"
 
-  # Git opcional
-  if [ "$use_git" = true ]; then
-    git init >/dev/null
-    git add . >/dev/null
-    git commit -m "Initial commit: $project_name" >/dev/null
-    echo "✅ Repositorio Git inicializado"
+  # Copiar archivos de muestra desde ~/Documentos/assets/
+  local assets_dir="$HOME/Documentos/assets"
+
+  if [ ! -d "$assets_dir" ]; then
+    echo "⚠️  ADVERTENCIA: No se encuentra el directorio ~/Documentos/assets/"
+    echo "   Ver el Drive para solucionar este problema."
+    echo "   El proyecto se creó, pero sin archivos de muestra."
+  else
+    # Copiar video de muestra si existe
+    if [ -f "$assets_dir/raw_atardecer_montana_arbol_piedra.mp4" ]; then
+      cp "$assets_dir/raw_atardecer_montana_arbol_piedra.mp4" "01_raw_video/"
+      echo "✅ Video de muestra copiado a 01_raw_video/"
+    fi
+
+    # Copiar imagen de muestra si existe
+    if [ -f "$assets_dir/raw_fondo_atardecer_mujer_volando.jpg" ]; then
+      cp "$assets_dir/raw_fondo_atardecer_mujer_volando.jpg" "03_resources/graphics/"
+      echo "✅ Imagen de muestra copiada a 03_resources/graphics/"
+    fi
   fi
 
+  echo ""
   echo "✅ Proyecto creado en: $(pwd)"
-  echo "Estructura creada:"
+  echo ""
+  echo "📁 Estructura del proyecto:"
+
+  # Mostrar estructura con tree si está disponible, si no usar find
   if command -v tree >/dev/null; then
     tree -L 3
   else
-    find . -maxdepth 3 -type d
+    find . -maxdepth 3 -type d | sort
   fi
 }
 
 show_help() {
-  echo "Uso:"
-  echo "  yv new <nombre-proyecto> [--git]  Crea nuevo proyecto"
-  echo "  yv help                          Muestra esta ayuda"
+  echo "📹 YV - Gestor de Proyectos de Video"
   echo ""
-  echo "Ejemplo:"
-  echo "  yv new 'MiVideo' --git"
+  echo "Uso:"
+  echo "  yv new <nombre-proyecto>    Crea un nuevo proyecto de video"
+  echo "  yv help                     Muestra esta ayuda"
+  echo ""
+  echo "Descripción:"
+  echo "  Crea una estructura completa de directorios para proyectos de video,"
+  echo "  incluyendo plantillas de seguimiento y archivos de muestra."
+  echo ""
+  echo "Estructura generada:"
+  echo "  01_raw_audio/          - Audio sin procesar"
+  echo "  01_raw_video/          - Video sin procesar (con archivo de muestra)"
+  echo "  02_edit_project/       - Proyecto de edición (Kdenlive)"
+  echo "  02_exports/            - Videos exportados"
+  echo "  03_resources/          - Recursos (música, imágenes, gráficos)"
+  echo "  04_script/             - Guiones y notas"
+  echo "  video_tracker.md       - Plantilla de seguimiento del proyecto"
+  echo "  README.md              - Información del proyecto"
+  echo ""
+  echo "Ejemplos:"
+  echo "  yv new 'Mi Primer Video'"
+  echo "  yv new 'Tutorial_Python'"
+  echo "  yv new Vlog_2025"
 }
 
 # =============================
-# Main
+# Main - Punto de entrada del script
 # =============================
 case "$1" in
 "new")
+  # Validar que se proporcione el nombre del proyecto
   if [ -z "$2" ]; then
-    echo "Error: Falta nombre del proyecto"
+    echo "❌ Error: Falta nombre del proyecto"
+    echo ""
     show_help
     exit 1
   fi
   project_name="$2"
-  shift 2
-  create_project "$project_name" "$@"
+  create_project "$project_name"
   ;;
 "help" | "--help" | "-h")
   show_help
