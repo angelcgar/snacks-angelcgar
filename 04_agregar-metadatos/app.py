@@ -1,181 +1,226 @@
 #!/usr/bin/env python3
+"""
+Blog Post Metadata Manager
+Herramienta CLI para gestionar frontmatter de posts en formato Markdown.
+"""
+
 import argparse
+import os
 import sys
 import unicodedata
-import os
-from datetime import datetime, UTC, timezone
+from datetime import datetime, UTC
+from pathlib import Path
 
 # Constantes
-VERSION = "0.0.6"
+VERSION = "1.0.0"
 AUTHOR = "Angel Contreras Garcia"
 # Ruta de destino para guardar archivos procesados
-# Asegúrate de que esta ruta sea válida en tu sistema
-DESTINO = os.path.expanduser("~/Dev/blog-angelcgar/src/data/blog/")
+DESTINATION_DIR = Path.home() / "Dev" / "blog-angelcgar" / "src" / "data" / "blog"
 
-def hola_mundo(nombre):
-    print(f"hola \"{nombre}\"")
 
-def slugify(texto: str) -> str:
+def slugify(text: str) -> str:
     """
     Convierte un texto en un slug legible para URLs.
-    - Elimina acentos.
-    - Mantiene la ñ y caracteres como ¿?.
-    - Convierte espacios en guiones.
-    - Pone todo en minúsculas.
+
+    Args:
+        text: Texto a convertir en slug
+
+    Returns:
+        String con formato slug (minúsculas, sin acentos, guiones en lugar de espacios)
     """
-    texto = texto.replace("ñ", "__enie__")
+    # Preservar la ñ temporalmente
+    text = text.replace("ñ", "__enie__")
 
-    texto = unicodedata.normalize("NFD", texto)
-    texto = texto.encode("ascii", "ignore").decode("utf-8")
+    # Normalizar y eliminar acentos
+    text = unicodedata.normalize("NFD", text)
+    text = text.encode("ascii", "ignore").decode("utf-8")
 
-    texto = texto.replace("__enie__", "ñ")
-    texto = texto.replace("?", "")
-    texto = texto.strip().lower()
-    texto = texto.replace(" ", "-")
-    return texto
+    # Restaurar la ñ
+    text = text.replace("__enie__", "ñ")
 
-def get_fixed_timestamp():
-    # Obtiene la fecha y hora actual en UTC
-    dt = datetime.now(timezone.utc)
-    # Devuelve en formato ISO 8601 con Z al final
-    return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+    # Limpiar caracteres especiales y formatear
+    text = text.replace("?", "").replace("¿", "")
+    text = text.strip().lower()
+    text = text.replace(" ", "-")
 
-def procesar_basico(path_archivo, description=None, renombrar=False, guardar=False):
+    return text
+
+def get_iso_timestamp() -> str:
+    """
+    Obtiene la fecha y hora actual en formato ISO 8601 con UTC.
+
+    Returns:
+        String con formato ISO 8601 (YYYY-MM-DDTHH:MM:SSZ)
+    """
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+def add_frontmatter(file_path: str, description: str | None = None, rename: bool = False, save: bool = False) -> None:
+    """
+    Agrega frontmatter a un archivo Markdown.
+
+    Args:
+        file_path: Ruta del archivo a procesar
+        description: Descripción personalizada para el frontmatter
+        rename: Si True, renombra el archivo usando el slug generado
+        save: Si True, guarda el archivo en el directorio de destino
+    """
+    # Leer archivo
     try:
-        with open(path_archivo, "r", encoding="utf-8") as f:
-            lineas = f.readlines()
+        with open(file_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
     except FileNotFoundError:
-        print(f"Error: el archivo '{path_archivo}' no existe.")
+        print(f"❌ Error: el archivo '{file_path}' no existe.")
         sys.exit(1)
 
-    if not lineas:
-        print("Error: el archivo está vacío.")
+    # Validaciones
+    if not lines:
+        print("❌ Error: el archivo está vacío.")
         sys.exit(1)
 
-    if lineas[0].startswith("---"):
-        print("Error: no se puede modificar este archivo (ya contiene frontmatter).")
+    if lines[0].startswith("---"):
+        print("❌ Error: el archivo ya contiene frontmatter.")
         sys.exit(1)
 
-    if not lineas[0].startswith("#"):
-        print("Error: la primera línea no es un título principal '#'.")
+    if not lines[0].startswith("#"):
+        print("❌ Error: la primera línea debe ser un título principal '#'.")
         sys.exit(1)
 
-    # Extraer título
-    titulo = lineas[0].lstrip("#").strip()
-    slug = slugify(titulo)
+    # Extraer título y generar slug
+    title = lines[0].lstrip("#").strip()
+    slug = slugify(title)
 
-    ahora = datetime.now(UTC).isoformat()
+    # Descripción por defecto
+    default_description = "Post del blog personal de Angel Contreras Garcia."
 
+    # Crear frontmatter
     frontmatter = f"""---
 author: {AUTHOR}
-pubDatetime: {get_fixed_timestamp()}
-modDatetime: {get_fixed_timestamp()}
-title: {titulo}
+pubDatetime: {get_iso_timestamp()}
+modDatetime: {get_iso_timestamp()}
+title: {title}
 slug: {slug}
 featured: true
 draft: false
 tags:
-  - configuration
-  - docs
-description: {description if description else "How you can make AstroPaper theme absolutely yours."}
+  - blog
+description: {description if description else default_description}
 ---
 """
 
-    nuevo_contenido = frontmatter + "".join(lineas[1:])
+    new_content = frontmatter + "".join(lines[1:])
 
-    # Lógica de guardado
-    base_dir = os.path.dirname(path_archivo) or "."
-    nombre_final = f"{slug}.md"
+    # Determinar ruta final del archivo
+    base_dir = Path(file_path).parent
+    final_filename = f"{slug}.md"
 
-    if guardar:
-        os.makedirs(DESTINO, exist_ok=True)
-        destino_path = os.path.join(DESTINO, nombre_final)
-        if os.path.exists(destino_path):
-            print(f"⚠️ Error: ya existe un archivo en destino con el nombre '{destino_path}'.")
+    if save:
+        # Guardar en directorio de destino
+        DESTINATION_DIR.mkdir(parents=True, exist_ok=True)
+        final_path = DESTINATION_DIR / final_filename
+        if final_path.exists():
+            print(f"⚠️  Error: ya existe un archivo en destino: '{final_path}'")
             sys.exit(1)
-        nuevo_nombre = destino_path
-    elif renombrar:
-        destino_path = os.path.join(base_dir, nombre_final)
-        if os.path.exists(destino_path):
-            print(f"⚠️ Error: ya existe un archivo en origen con el nombre '{destino_path}'.")
+    elif rename:
+        # Renombrar en el mismo directorio
+        final_path = base_dir / final_filename
+        if final_path.exists():
+            print(f"⚠️  Error: ya existe un archivo con el nombre '{final_path}'")
             sys.exit(1)
-        os.rename(path_archivo, destino_path)
-        nuevo_nombre = destino_path
+        # Renombrar el archivo original
+        Path(file_path).rename(final_path)
     else:
-        nuevo_nombre = path_archivo
+        # Sobrescribir archivo original
+        final_path = Path(file_path)
 
-    # Guardar contenido
-    with open(nuevo_nombre, "w", encoding="utf-8") as f:
-        f.write(nuevo_contenido)
+    # Escribir contenido
+    with open(final_path, "w", encoding="utf-8") as f:
+        f.write(new_content)
 
-    print(f"✅ Archivo '{nuevo_nombre}' modificado con éxito.")
+    print(f"✅ Archivo procesado: '{final_path}'")
 
-def mover_a_destino(path_archivo: str):
-    """Mueve un archivo al directorio DESTINO sin modificarlo."""
-    os.makedirs(DESTINO, exist_ok=True)
-    nombre_archivo = os.path.basename(path_archivo)
-    destino_path = os.path.join(DESTINO, nombre_archivo)
+def move_to_destination(file_path: str) -> None:
+    """
+    Mueve un archivo al directorio de destino sin modificarlo.
 
-    if os.path.exists(destino_path):
-        print(f"⚠️ Error: ya existe un archivo en destino con el nombre '{destino_path}'.")
+    Args:
+        file_path: Ruta del archivo a mover
+    """
+    DESTINATION_DIR.mkdir(parents=True, exist_ok=True)
+
+    source = Path(file_path)
+    destination = DESTINATION_DIR / source.name
+
+    if not source.exists():
+        print(f"❌ Error: el archivo '{file_path}' no existe.")
         sys.exit(1)
 
+    if destination.exists():
+        print(f"⚠️  Error: ya existe un archivo en destino: '{destination}'")
+        sys.exit(1)
+
+    source.rename(destination)
+    print(f"✅ Archivo movido a: '{destination}'")
+
+def update_modification_date(file_path: str) -> None:
+    """
+    Actualiza la fecha de modificación (modDatetime) en el frontmatter.
+
+    Args:
+        file_path: Ruta del archivo a actualizar
+    """
     try:
-        os.rename(path_archivo, destino_path)
-        print(f"✅ Archivo movido a '{destino_path}' con éxito.")
+        with open(file_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
     except FileNotFoundError:
-        print(f"❌ Error: el archivo '{path_archivo}' no existe.")
+        print(f"❌ Error: el archivo '{file_path}' no existe.")
         sys.exit(1)
 
-def actualizar_fecha(path_archivo: str):
-    """Actualiza la fecha de modificación en el frontmatter de un archivo Markdown."""
-    try:
-        with open(path_archivo, "r", encoding="utf-8") as f:
-            lineas = f.readlines()
-    except FileNotFoundError:
-        print(f"Error: el archivo '{path_archivo}' no existe.")
+    # Validar que existe frontmatter
+    if not lines or not lines[0].startswith("---"):
+        print("❌ Error: el archivo no contiene frontmatter.")
         sys.exit(1)
 
-    if not lineas or not lineas[0].startswith("---"):
-        print("Error: el archivo no contiene frontmatter.")
-        sys.exit(1)
-
+    # Encontrar el final del frontmatter
     frontmatter_end_index = -1
-    for i, linea in enumerate(lineas[1:], 1):
-        if linea.startswith("---"):
+    for i, line in enumerate(lines[1:], 1):
+        if line.startswith("---"):
             frontmatter_end_index = i
             break
 
     if frontmatter_end_index == -1:
-        print("Error: el frontmatter no está bien formado.")
+        print("❌ Error: el frontmatter no está bien formado.")
         sys.exit(1)
 
-    mod_datetime_encontrado = False
+    # Buscar y actualizar modDatetime
+    mod_datetime_found = False
     for i in range(1, frontmatter_end_index):
-        if lineas[i].startswith("modDatetime:"):
-            lineas[i] = f"modDatetime: {get_fixed_timestamp()}\n"
-            mod_datetime_encontrado = True
+        if lines[i].startswith("modDatetime:"):
+            lines[i] = f"modDatetime: {get_iso_timestamp()}\n"
+            mod_datetime_found = True
             break
 
-    if not mod_datetime_encontrado:
-        print("Error: no se encontró 'modDatetime' en el frontmatter.")
+    if not mod_datetime_found:
+        print("❌ Error: no se encontró 'modDatetime' en el frontmatter.")
         sys.exit(1)
 
-    with open(path_archivo, "w", encoding="utf-8") as f:
-        f.writelines(lineas)
+    # Escribir cambios
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.writelines(lines)
 
-    print(f"✅ Fecha de modificación de '{path_archivo}' actualizada con éxito.")
+    print(f"✅ Fecha de modificación actualizada: '{file_path}'")
 
-def main():
+def main() -> None:
+    """Punto de entrada principal de la aplicación."""
     parser = argparse.ArgumentParser(
-        description="CLI para manejar archivos Markdown de mi blog personal",
+        description="Blog Post Metadata Manager - Gestiona frontmatter de posts en Markdown",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
-    # SubComandos
+    # Subcomandos
     subparsers = parser.add_subparsers(
-        dest="comando",
-        required=True
+        dest="command",
+        required=True,
+        help="Comandos disponibles"
     )
 
     # Comando "version"
@@ -184,83 +229,71 @@ def main():
         help="Muestra la versión del programa"
     )
 
-    # Comando "hola"
-    parser_hola = subparsers.add_parser(
-        "hola",
-        help="Saluda a una persona"
-    )
-    parser_hola.add_argument("--nombre",
-        type=str,
-        default="Joe Doe",
-        help="Nombre de la persona a saludar"
-    )
-
-    # Comando "basico"
-    parser_basico = subparsers.add_parser(
-        "basico",
+    # Comando "add" (antes "basico")
+    parser_add = subparsers.add_parser(
+        "add",
         help="Agrega frontmatter a un archivo Markdown"
     )
-    parser_basico.add_argument(
+    parser_add.add_argument(
         "-f",
         "--file",
-        help="Archivo Markdown a modificar",
-        metavar='ARCHIVO.md',
+        help="Archivo Markdown a procesar",
+        metavar="FILE.md",
         type=str,
         required=True,
     )
-    parser_basico.add_argument(
+    parser_add.add_argument(
         "-d",
         "--description",
         help="Descripción personalizada para el frontmatter",
-        metavar='DESCRIPCION',
+        metavar="DESCRIPTION",
         default=None,
         type=str,
     )
-    parser_basico.add_argument(
-        "--renombrar",
+    parser_add.add_argument(
+        "--rename",
         action="store_true",
         help="Renombrar el archivo usando el slug generado"
     )
-    parser_basico.add_argument(
-        "--guardar",
+    parser_add.add_argument(
+        "--save",
         action="store_true",
-        help=f"Guardar el archivo en {DESTINO}"
+        help=f"Guardar el archivo en el directorio de destino ({DESTINATION_DIR})"
     )
 
-    # Comando "guardar"
-    parser_guardar = subparsers.add_parser(
-        "guardar",
-        help=f"Mueve un archivo directamente a {DESTINO}"
+    # Comando "move" (antes "guardar")
+    parser_move = subparsers.add_parser(
+        "move",
+        help=f"Mueve un archivo directamente al directorio de destino ({DESTINATION_DIR})"
     )
-    parser_guardar.add_argument(
-        "archivo",
+    parser_move.add_argument(
+        "file",
         type=str,
         help="Ruta del archivo a mover"
     )
 
-    # Comando "actualizar"
-    parser_actualizar = subparsers.add_parser(
-        "actualizar",
-        help="Actualiza la fecha de modificación de un archivo Markdown"
+    # Comando "update" (antes "actualizar")
+    parser_update = subparsers.add_parser(
+        "update",
+        help="Actualiza la fecha de modificación (modDatetime) en el frontmatter"
     )
-    parser_actualizar.add_argument(
-        "archivo",
+    parser_update.add_argument(
+        "file",
         type=str,
         help="Ruta del archivo a actualizar"
     )
 
     args = parser.parse_args()
 
-    if args.comando == "version":
-        print(VERSION)
-    elif args.comando == "hola":
-        hola_mundo(args.nombre)
-    elif args.comando == "basico":
-        procesar_basico(args.file, args.description, args.renombrar, args.guardar)
-    elif args.comando == "guardar":
-        mover_a_destino(args.archivo)
-    elif args.comando == "actualizar":
-        actualizar_fecha(args.archivo)
+    # Ejecutar comando
+    if args.command == "version":
+        print(f"Blog Post Metadata Manager v{VERSION}")
+    elif args.command == "add":
+        add_frontmatter(args.file, args.description, args.rename, args.save)
+    elif args.command == "move":
+        move_to_destination(args.file)
+    elif args.command == "update":
+        update_modification_date(args.file)
 
 if __name__ == "__main__":
     main()
