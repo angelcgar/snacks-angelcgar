@@ -149,7 +149,7 @@ print_installation_summary() {
   print_success "Instalación completada"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo
-  echo "Script instalado como: ${GREEN}$SCRIPT_NAME${NC}"
+  echo -e "Script instalado como: ${GREEN}$SCRIPT_NAME${NC}"
   echo "Ubicación: $INSTALL_DIR/$SCRIPT_NAME"
   echo
   echo "Uso:"
